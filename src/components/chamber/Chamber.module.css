@@ -122,11 +122,14 @@
 }
 
 .cardsHeader {
-  padding: 0 var(--gutter);
+  width: min(var(--block), 100% - 2 * var(--gutter));
+  margin: 0 auto;
 }
 
 .cardsFoot {
-  padding: 26px var(--gutter) 60px;
+  width: min(var(--block), 100% - 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 26px 0 60px;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.14em;

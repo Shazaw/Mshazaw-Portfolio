@@ -217,15 +217,23 @@ Tokens live in `src/styles/tokens.css`; nothing hard-codes a colour.
 - Motion: 200–400 ms on `cubic-bezier(.22,1,.36,1)`, one orchestrated moment per surface,
   and `prefers-reduced-motion` kills all choreography.
 
-### The connected-block principle
+### Two card languages
 
-Cards never float as separate rounded islands. They form one continuous slab — full viewport
-width, cells separated by shared 1px hairlines, **zero gaps, zero border-radius**. This holds
-on white (homepage strips) and on dark (the mosaic). Hover states are always **inset** — an
-inset ring plus an inner glow — so shared hairlines never double.
+They are not the same thing, and the difference is deliberate — both follow
+[Kage](https://mengto.github.io/kage/).
 
-If you find yourself adding `gap`, `border-radius`, or a per-cell `transform: translate` to a
-mosaic or strip cell, stop: it's wrong.
+**Homepage — "02 Still Gardens".** A lead card carrying the flagship item with the next two
+stacked beside it in a narrower column. Cards are separate objects: real gaps, a 10px radius,
+artwork filling each card with the title laid over its bottom edge and the mono meta sitting
+outside beneath it. Hover tilts the media only, so the small type below stays crisp.
+
+**Sections and CTF — "03 Sacred Craft".** One connected block. Cells share 1px hairlines with
+**zero gaps and zero border-radius**, and hover states are always **inset** — an inset ring
+plus an inner glow — so shared hairlines never double. Adding a `gap`, a `border-radius`, or a
+per-cell `transform: translate` here is wrong.
+
+**Both blocks are inset inside the page column** and align with the body copy's left edge.
+Neither runs edge to edge.
 
 ---
 
@@ -247,6 +255,13 @@ spec was asking for. They are the only places the build departs from a stated fi
    ~400×300 card; a long record grows taller and the fixed floor pushed its top off-screen. The
    clamp is now driven by the card's measured box plus navbar clearance, which is what the
    fixed numbers were approximating.
+
+**Card layout (§7).** The spec applies the connected-block rule to the homepage strips as well:
+full viewport width, uniform columns, zero gaps, zero radius. Checked against the Kage
+reference the spec cites, that is the Sacred Craft pattern, not Still Gardens — Still Gardens
+is an inset lead-plus-stack of separate cards with gaps and a radius. The homepage now follows
+the reference. The mosaic keeps the connected-block rule, but is inset in the page column
+rather than running edge to edge, which is also how Sacred Craft sits on the page.
 
 Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
 (the mosaic renders every section), and particle points carry the shared radial texture —

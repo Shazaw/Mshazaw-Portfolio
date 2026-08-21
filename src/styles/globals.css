@@ -81,12 +81,6 @@ html[data-theme='chamber'] body {
   text-transform: uppercase;
 }
 
-/* Full-bleed escape from the 1240px measure. */
-.bleed {
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-}
-
 .srOnly {
   position: absolute;
   width: 1px;

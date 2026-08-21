@@ -5,14 +5,20 @@
  * strictly inset so shared borders never double.
  */
 
+/*
+ * Sacred-Craft mosaic: ONE connected block — cells share 1px hairlines with no
+ * gaps and no radius. The block itself is inset inside the page column and
+ * carries its own outer border; it does not run edge to edge.
+ */
 .mosaic {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0;
-  width: 100%;
+  width: min(var(--block), 100% - 2 * var(--gutter));
+  margin: 0 auto;
   border-top: 1px solid var(--hairline-dark-strong);
+  border-left: 1px solid var(--hairline-dark);
   list-style: none;
-  margin: 0;
   padding: 0;
 }
 

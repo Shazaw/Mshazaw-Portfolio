@@ -45,6 +45,9 @@
 
   /* --- layout --- */
   --measure: 1240px;
+  /* Connected blocks (mosaic, CTF) sit in the same column as body copy — inset
+     from the viewport edges, never edge to edge. */
+  --block: 1240px;
   --nav-h: 56px;
   --gutter: 32px;
   --gutter-sm: 22px;

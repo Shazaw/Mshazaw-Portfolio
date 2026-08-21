@@ -114,13 +114,29 @@ const run = async () => {
     await page.waitForTimeout(1200)
 
     const cells = await page.locator('a[href^="/projects?focus="]').count()
-    check('projects strip renders three cells', cells === 3, String(cells))
+    check('projects strip renders three cards', cells === 3, String(cells))
 
-    const cellHeight = await page
-      .locator('a[href^="/projects?focus="]')
-      .first()
-      .evaluate((el) => el.getBoundingClientRect().height)
-    check('strip cell is not a thin strip (>=420px)', cellHeight >= 420, `${Math.round(cellHeight)}px`)
+    const shape = await page.evaluate(() => {
+      const group = document.querySelector('#projects article')?.parentElement
+      const cards = [...document.querySelectorAll('#projects article')]
+      const media = cards.map((c) => c.querySelector('div').getBoundingClientRect())
+      const groupBox = (group?.matches('[data-count]') ? group : group?.parentElement)?.getBoundingClientRect()
+      return {
+        groupLeft: groupBox ? Math.round(groupBox.left) : -1,
+        groupRight: groupBox ? Math.round(groupBox.right) : -1,
+        leadRatio: +(media[0].width / media[0].height).toFixed(2),
+        leadWider: media[0].width > media[1].width,
+        gap: Math.round(media[1].left - media[0].right),
+        radius: getComputedStyle(cards[0].querySelector('div')).borderTopLeftRadius,
+      }
+    })
+
+    // The Still-Gardens group is inset in the page column, not edge to edge.
+    check('strip group is inset from the viewport edges', shape.groupLeft > 40 && shape.groupRight < 1400, JSON.stringify(shape))
+    check('lead card is wider than the stacked pair', shape.leadWider)
+    check('lead media keeps a landscape ratio (1.25–1.7)', shape.leadRatio > 1.25 && shape.leadRatio < 1.7, String(shape.leadRatio))
+    check('cards are separated by a real gap', shape.gap >= 16, `${shape.gap}px`)
+    check('cards carry a radius', parseFloat(shape.radius) > 0, shape.radius)
 
     await page.locator('a[href^="/projects?focus="]').first().click()
     await page.waitForTimeout(4200)
@@ -209,6 +225,24 @@ const run = async () => {
 
     const canvasHidden = await page.locator('canvas').getAttribute('aria-hidden')
     check('canvas is aria-hidden', canvasHidden === 'true')
+
+    const block = await page.evaluate(() => {
+      const grid = document.querySelector('article')?.parentElement
+      const b = grid.getBoundingClientRect()
+      const cells = [...grid.querySelectorAll('article')].slice(0, 2)
+      const boxes = cells.map((c) => c.getBoundingClientRect())
+      return {
+        left: Math.round(b.left),
+        right: Math.round(b.right),
+        gap: getComputedStyle(grid).gap,
+        radius: getComputedStyle(cells[0]).borderTopLeftRadius,
+        seam: Math.round(boxes[1].left - boxes[0].right),
+      }
+    })
+    check('mosaic block is inset from the viewport edges', block.left > 40 && block.right < 1400, JSON.stringify(block))
+    check('mosaic stays a connected block (no gap)', block.gap === 'normal' || parseFloat(block.gap) === 0, block.gap)
+    check('mosaic cells keep square corners', parseFloat(block.radius) === 0, block.radius)
+    check('mosaic cells share their seam', Math.abs(block.seam) <= 1, `${block.seam}px`)
     await ctx.close()
   }
 

@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useCallback, useRef } from 'react'
-import { TagList } from '@/components/ui/Tag'
 import { indexOf } from '@/lib/format'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 import { ART_VIEWBOX, buildArtwork } from './artwork'
@@ -10,57 +9,62 @@ import type { SurveyItem } from '@/lib/types'
 import styles from './CardStrip.module.css'
 
 /**
- * One cell of a homepage strip. The "slightly 3D" treatment (§7) lives here:
- * pointer-tracked tilt on the cell, artwork and body lifted on separate Z
- * planes. Clicking navigates to the section page with this item focused.
+ * One Still-Gardens card: wireframe artwork with the title laid over its
+ * bottom edge, and the mono meta sitting outside beneath it.
+ *
+ * The tilt is applied to the media block only — the caption below stays flat so
+ * its small type never smears.
  */
 export const StripCell = ({
   item,
   index,
   total,
   href,
+  variant,
 }: {
   item: SurveyItem
   index: number
   total: number
   href: string
+  variant: 'lead' | 'side'
 }) => {
-  const ref = useRef<HTMLAnchorElement>(null)
+  const mediaRef = useRef<HTMLDivElement>(null)
   const reduced = usePrefersReducedMotion()
   const art = buildArtwork(item.artwork)
+  const lead = variant === 'lead'
+  // `slice` crops to fill, which over-zooms a motif on a card this large.
+  const fit = lead ? 'xMidYMax meet' : 'xMidYMax slice'
 
   const onMove = useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement>) => {
+    (event: React.MouseEvent<HTMLElement>) => {
       if (reduced) return
-      const node = ref.current
+      const node = mediaRef.current
       if (!node) return
       const rect = node.getBoundingClientRect()
       const x = (event.clientX - rect.left) / rect.width - 0.5
       const y = (event.clientY - rect.top) / rect.height - 0.5
-      node.style.transform = `rotateY(${x * 9}deg) rotateX(${-y * 7}deg) translateZ(4px)`
+      node.style.transform = `rotateY(${x * 7}deg) rotateX(${-y * 5}deg) translateZ(6px)`
     },
     [reduced],
   )
 
   const reset = useCallback(() => {
-    const node = ref.current
+    const node = mediaRef.current
     if (node) node.style.transform = ''
   }, [])
 
   return (
-    <Link
-      ref={ref}
-      href={href}
-      className={styles.cell}
+    <article
+      className={[styles.card, lead ? styles.lead : styles.sideCard].join(' ')}
       onMouseMove={onMove}
       onMouseLeave={reset}
       onBlur={reset}
     >
-      <div className={styles.visual}>
+      <div className={styles.media} ref={mediaRef}>
         <svg
           className={styles.art}
           viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
-          preserveAspectRatio="xMidYMax slice"
+          preserveAspectRatio={fit}
           aria-hidden="true"
         >
           {art.main.map((d, i) => (
@@ -70,29 +74,44 @@ export const StripCell = ({
         <svg
           className={`${styles.art} ${styles.artMuted}`}
           viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
-          preserveAspectRatio="xMidYMax slice"
+          preserveAspectRatio={fit}
           aria-hidden="true"
         >
           {art.muted.map((d, i) => (
             <path key={`u${i}`} d={d} />
           ))}
         </svg>
+
         <span className={styles.scan} aria-hidden="true" />
-      </div>
+        <span className={styles.scrim} aria-hidden="true" />
 
-      <span className={styles.corner}>{item.cornerLabel}</span>
+        <svg className={styles.arrow} viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M7 17 L17 7 M9 7 H17 V15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="square"
+          />
+        </svg>
 
-      <div className={styles.body}>
-        <h3 className={styles.title}>{item.title}</h3>
-        <p className={styles.summary}>{item.summary}</p>
-        <TagList tags={item.tags} max={3} className={styles.tags} />
-        <div className={styles.foot}>
-          <span>
-            {item.year} · {item.kicker}
-          </span>
-          <span className={styles.index}>{indexOf(index, total)}</span>
+        <div className={styles.overlay}>
+          <h3 className={styles.title}>
+            <Link href={href} className={styles.trigger}>
+              {item.title}
+            </Link>
+          </h3>
+          {item.subtag ? <span className={styles.subtag}>{item.subtag}</span> : null}
         </div>
       </div>
-    </Link>
+
+      <div className={styles.caption}>
+        <span>
+          {item.year} · {item.kicker}
+        </span>
+        <span className={styles.index}>{indexOf(index, total)}</span>
+      </div>
+      <p className={styles.summary}>{item.summary}</p>
+    </article>
   )
 }

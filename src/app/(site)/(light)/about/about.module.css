@@ -63,14 +63,14 @@
 }
 
 /* Connected strip of focus areas — same principle as the homepage strips. */
+/* Connected block, inset in the page column — not edge to edge. */
 .focusStrip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0;
-  width: 100vw;
-  margin: 64px 0 0 calc(50% - 50vw);
-  border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
+  width: 100%;
+  margin: 64px 0 0;
+  border: 1px solid var(--hairline);
   background: var(--paper-pure);
 }
 
