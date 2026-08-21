@@ -8,7 +8,7 @@
 }
 
 .head {
-  width: min(var(--block), 100% - 2 * var(--gutter));
+  width: var(--shell);
   margin: 0 auto 40px;
 }
 
@@ -104,7 +104,7 @@
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0;
-  width: min(var(--block), 100% - 2 * var(--gutter));
+  width: var(--shell);
   margin: 0 auto;
   border-top: 1px solid var(--hairline-dark-strong);
   border-left: 1px solid var(--hairline-dark);
@@ -355,7 +355,7 @@
 }
 
 .foot {
-  width: min(var(--block), 100% - 2 * var(--gutter));
+  width: var(--shell);
   margin: 0 auto;
   padding: 26px 0 80px;
   font-family: var(--font-mono);

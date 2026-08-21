@@ -44,13 +44,21 @@
   --step-7: 96px;
 
   /* --- layout --- */
-  --measure: 1240px;
-  /* Connected blocks (mosaic, CTF) sit in the same column as body copy — inset
-     from the viewport edges, never edge to edge. */
-  --block: 1240px;
+  /*
+   * The page shell. Everything — nav, chapters, card blocks, footer — sits
+   * inside it and shares one left edge.
+   *
+   * `--edge` is the inset from the viewport, tracking the Kage reference's
+   * ~3.3% at typical widths and clamping so it neither crowds a phone nor
+   * runs away on an ultrawide. Blocks are near-full-width, not a narrow
+   * centred measure.
+   */
+  --edge: clamp(22px, 3.3vw, 64px);
+  --shell-max: 1760px;
+  --shell: min(var(--shell-max), 100% - 2 * var(--edge));
+  /* Legacy alias — the page inset and the gutter are the same thing. */
+  --gutter: var(--edge);
   --nav-h: 56px;
-  --gutter: 32px;
-  --gutter-sm: 22px;
 
   /* --- motion --- */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -63,10 +71,4 @@
   --shadow-popup: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(63, 198, 255, 0.08);
   --ring-inset: inset 0 0 0 1px rgba(63, 198, 255, 0.55);
   --ring-inset-glow: inset 0 0 0 1px rgba(63, 198, 255, 0.55), inset 0 0 44px rgba(63, 198, 255, 0.07);
-}
-
-@media (max-width: 720px) {
-  :root {
-    --gutter: var(--gutter-sm);
-  }
 }

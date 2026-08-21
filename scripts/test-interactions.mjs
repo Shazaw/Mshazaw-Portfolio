@@ -121,9 +121,13 @@ const run = async () => {
       const cards = [...document.querySelectorAll('#projects article')]
       const media = cards.map((c) => c.querySelector('div').getBoundingClientRect())
       const groupBox = (group?.matches('[data-count]') ? group : group?.parentElement)?.getBoundingClientRect()
+      const heading = document.querySelector('#projects h2')?.getBoundingClientRect()
       return {
-        groupLeft: groupBox ? Math.round(groupBox.left) : -1,
-        groupRight: groupBox ? Math.round(groupBox.right) : -1,
+        vw: window.innerWidth,
+        insetLeft: groupBox ? Math.round(groupBox.left) : -1,
+        insetRight: groupBox ? Math.round(window.innerWidth - groupBox.right) : -1,
+        coverage: groupBox ? +(groupBox.width / window.innerWidth).toFixed(3) : 0,
+        alignsWithHeading: groupBox && heading ? Math.abs(groupBox.left - heading.left) <= 1 : false,
         leadRatio: +(media[0].width / media[0].height).toFixed(2),
         leadWider: media[0].width > media[1].width,
         gap: Math.round(media[1].left - media[0].right),
@@ -131,8 +135,13 @@ const run = async () => {
       }
     })
 
-    // The Still-Gardens group is inset in the page column, not edge to edge.
-    check('strip group is inset from the viewport edges', shape.groupLeft > 40 && shape.groupRight < 1400, JSON.stringify(shape))
+    // Inset from the edges like the reference, but still near-full-width — not
+    // flush to the viewport and not a narrow centred measure.
+    const insetOk = (m) =>
+      m.insetLeft > m.vw * 0.02 && m.insetLeft < m.vw * 0.06 && Math.abs(m.insetLeft - m.insetRight) <= 2
+    check('strip group is inset ~3% from both edges', insetOk(shape), JSON.stringify(shape))
+    check('strip group stays near full width (>88%)', shape.coverage > 0.88, String(shape.coverage))
+    check('strip group shares the heading left edge', shape.alignsWithHeading)
     check('lead card is wider than the stacked pair', shape.leadWider)
     check('lead media keeps a landscape ratio (1.25–1.7)', shape.leadRatio > 1.25 && shape.leadRatio < 1.7, String(shape.leadRatio))
     check('cards are separated by a real gap', shape.gap >= 16, `${shape.gap}px`)
@@ -232,14 +241,21 @@ const run = async () => {
       const cells = [...grid.querySelectorAll('article')].slice(0, 2)
       const boxes = cells.map((c) => c.getBoundingClientRect())
       return {
-        left: Math.round(b.left),
-        right: Math.round(b.right),
+        vw: window.innerWidth,
+        insetLeft: Math.round(b.left),
+        insetRight: Math.round(window.innerWidth - b.right),
+        coverage: +(b.width / window.innerWidth).toFixed(3),
         gap: getComputedStyle(grid).gap,
         radius: getComputedStyle(cells[0]).borderTopLeftRadius,
         seam: Math.round(boxes[1].left - boxes[0].right),
       }
     })
-    check('mosaic block is inset from the viewport edges', block.left > 40 && block.right < 1400, JSON.stringify(block))
+    const blockInsetOk =
+      block.insetLeft > block.vw * 0.02 &&
+      block.insetLeft < block.vw * 0.06 &&
+      Math.abs(block.insetLeft - block.insetRight) <= 2
+    check('mosaic block is inset ~3% from both edges', blockInsetOk, JSON.stringify(block))
+    check('mosaic block stays near full width (>88%)', block.coverage > 0.88, String(block.coverage))
     check('mosaic stays a connected block (no gap)', block.gap === 'normal' || parseFloat(block.gap) === 0, block.gap)
     check('mosaic cells keep square corners', parseFloat(block.radius) === 0, block.radius)
     check('mosaic cells share their seam', Math.abs(block.seam) <= 1, `${block.seam}px`)

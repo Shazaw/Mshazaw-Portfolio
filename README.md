@@ -232,8 +232,15 @@ outside beneath it. Hover tilts the media only, so the small type below stays cr
 plus an inner glow — so shared hairlines never double. Adding a `gap`, a `border-radius`, or a
 per-cell `transform: translate` here is wrong.
 
-**Both blocks are inset inside the page column** and align with the body copy's left edge.
-Neither runs edge to edge.
+**Both blocks sit in the page shell** — inset ~3.3% from each viewport edge, matching the
+reference, and capped at 1760px so an ultrawide doesn't stretch a six-column mosaic. Nav,
+chapters, card blocks and footer all share that shell, so everything lines up on one left
+edge. Near-full-width, but never flush to the edge.
+
+```css
+--edge: clamp(22px, 3.3vw, 64px);        /* viewport inset */
+--shell: min(1760px, 100% - 2 * var(--edge));
+```
 
 ---
 
@@ -260,8 +267,8 @@ spec was asking for. They are the only places the build departs from a stated fi
 full viewport width, uniform columns, zero gaps, zero radius. Checked against the Kage
 reference the spec cites, that is the Sacred Craft pattern, not Still Gardens — Still Gardens
 is an inset lead-plus-stack of separate cards with gaps and a radius. The homepage now follows
-the reference. The mosaic keeps the connected-block rule, but is inset in the page column
-rather than running edge to edge, which is also how Sacred Craft sits on the page.
+the reference. The mosaic keeps the connected-block rule, but sits in the page shell rather
+than running edge to edge, which is also how Sacred Craft sits on the page.
 
 Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
 (the mosaic renders every section), and particle points carry the shared radial texture —

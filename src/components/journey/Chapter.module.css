@@ -11,9 +11,9 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  max-width: var(--measure);
+  width: var(--shell);
   margin: 0 auto;
-  padding: 120px var(--gutter);
+  padding: 120px 0;
 }
 
 .hero {

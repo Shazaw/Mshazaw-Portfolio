@@ -1,9 +1,9 @@
 .page {
   position: relative;
   z-index: 2;
-  max-width: var(--measure);
+  width: var(--shell);
   margin: 0 auto;
-  padding: calc(var(--nav-h) + 90px) var(--gutter) 120px;
+  padding: calc(var(--nav-h) + 90px) 0 120px;
 }
 
 .head {

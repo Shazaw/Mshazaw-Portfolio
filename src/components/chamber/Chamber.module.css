@@ -122,12 +122,12 @@
 }
 
 .cardsHeader {
-  width: min(var(--block), 100% - 2 * var(--gutter));
+  width: var(--shell);
   margin: 0 auto;
 }
 
 .cardsFoot {
-  width: min(var(--block), 100% - 2 * var(--gutter));
+  width: var(--shell);
   margin: 0 auto;
   padding: 26px 0 60px;
   font-family: var(--font-mono);
