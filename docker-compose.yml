@@ -1,0 +1,48 @@
+services:
+  holo-grid:
+    build: .
+    image: holo-grid-portfolio
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    environment:
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:?set PAYLOAD_SECRET in .env}
+      DATABASE_URI: file:/app/data/holo-grid.db
+      NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL:-http://localhost:3000}
+    volumes:
+      - holo-data:/app/data
+      - holo-media:/app/public/media
+
+  # Nightly SQLite backup, kept for 14 days. `.backup` is safe on a live
+  # database — a plain file copy is not.
+  backup:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      - holo-grid
+    environment:
+      RETAIN_DAYS: '14'
+    volumes:
+      - holo-data:/data:ro
+      - holo-backups:/backups
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache sqlite >/dev/null
+        while true; do
+          stamp=$$(date -u +%Y%m%dT%H%M%SZ)
+          if sqlite3 /data/holo-grid.db ".backup '/backups/holo-grid-$$stamp.db'"; then
+            gzip -f "/backups/holo-grid-$$stamp.db"
+            echo "backup ok: holo-grid-$$stamp.db.gz"
+          else
+            echo "backup FAILED at $$stamp" >&2
+          fi
+          find /backups -name 'holo-grid-*.db.gz' -mtime +$$RETAIN_DAYS -delete
+          sleep 86400
+        done
+
+volumes:
+  holo-data:
+  holo-media:
+  holo-backups:

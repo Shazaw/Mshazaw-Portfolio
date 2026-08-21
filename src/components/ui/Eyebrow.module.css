@@ -1,0 +1,22 @@
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin-bottom: 22px;
+}
+
+.tick {
+  width: 34px;
+  height: 1px;
+  background: var(--holo);
+  flex: none;
+}
+
+.onDark {
+  color: rgba(255, 255, 255, 0.5);
+}

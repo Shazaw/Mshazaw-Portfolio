@@ -1,0 +1,69 @@
+/*
+ * HOLOGRID design tokens — spec v2.0 §2.
+ * Every colour, size and easing in the site resolves back to this file.
+ */
+:root {
+  /* --- surface --- */
+  --paper: #f6f8f9;
+  --paper-pure: #ffffff;
+  --ink: #0c1218;
+  --graphite: #5b6774;
+  --hairline: #dde4e9;
+  --chamber: #04070d;
+
+  /* --- accent (the only one) --- */
+  --holo: #3fc6ff;
+  --holo-bright: #9fe5ff;
+  --holo-hot: #b6ecff;
+
+  /* --- dark-surface derivatives --- */
+  --hairline-dark: rgba(160, 210, 235, 0.14);
+  --hairline-dark-strong: rgba(160, 210, 235, 0.16);
+  --glass-cell: rgba(8, 15, 26, 0.42);
+  --glass-cell-hover: rgba(24, 46, 72, 0.55);
+  --glass-popup: rgba(9, 17, 29, 0.82);
+  --on-dark: #e8eef2;
+  --on-dark-muted: rgba(232, 238, 242, 0.6);
+  --on-dark-faint: rgba(255, 255, 255, 0.35);
+
+  --chamber-gradient: radial-gradient(120% 95% at 50% 64%, #10233c 0%, #081426 42%, #04070d 100%);
+  --strip-visual-gradient: linear-gradient(160deg, #eef4f7 0%, #e2edf3 55%, #d6e7f0 100%);
+
+  /* --- type --- */
+  --font-display: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  --font-body: var(--font-plex-sans), 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), 'IBM Plex Mono', ui-monospace, monospace;
+
+  --step-0: 12px;
+  --step-1: 14px;
+  --step-2: 16px;
+  --step-3: 20px;
+  --step-4: 28px;
+  --step-5: 40px;
+  --step-6: 64px;
+  --step-7: 96px;
+
+  /* --- layout --- */
+  --measure: 1240px;
+  --nav-h: 56px;
+  --gutter: 32px;
+  --gutter-sm: 22px;
+
+  /* --- motion --- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 200ms;
+  --dur: 300ms;
+  --dur-slow: 400ms;
+
+  /* --- depth --- */
+  --shadow-lift: 0 18px 44px rgb(12 18 24 / 0.14);
+  --shadow-popup: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(63, 198, 255, 0.08);
+  --ring-inset: inset 0 0 0 1px rgba(63, 198, 255, 0.55);
+  --ring-inset-glow: inset 0 0 0 1px rgba(63, 198, 255, 0.55), inset 0 0 44px rgba(63, 198, 255, 0.07);
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gutter: var(--gutter-sm);
+  }
+}

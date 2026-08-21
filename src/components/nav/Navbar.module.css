@@ -1,0 +1,142 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-h);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 var(--gutter);
+  background: rgba(246, 248, 249, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+
+.dark {
+  background: rgba(4, 7, 13, 0.72);
+  border-color: rgba(63, 198, 255, 0.14);
+  color: #fff;
+}
+
+.mark {
+  color: var(--holo);
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.links {
+  display: flex;
+  gap: 22px;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  align-items: center;
+}
+
+.link {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.75;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.link:hover,
+.link:focus-visible {
+  opacity: 1;
+}
+
+.active {
+  opacity: 1;
+  border-color: var(--holo);
+}
+
+.cv {
+  color: var(--holo);
+  opacity: 1;
+}
+
+/* Mobile: the link row collapses into a disclosure sheet. */
+.menuBtn {
+  display: none;
+  margin-left: auto;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  padding: 7px 12px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.sheet {
+  position: fixed;
+  top: var(--nav-h);
+  left: 0;
+  right: 0;
+  z-index: 59;
+  display: none;
+  flex-direction: column;
+  background: rgba(246, 248, 249, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.sheet.darkSheet {
+  background: rgba(4, 7, 13, 0.96);
+  border-color: rgba(63, 198, 255, 0.14);
+  color: #fff;
+}
+
+.sheet.open {
+  display: flex;
+}
+
+.sheetLink {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: inherit;
+  padding: 15px var(--gutter);
+  border-top: 1px solid var(--hairline);
+  opacity: 0.8;
+}
+
+.darkSheet .sheetLink {
+  border-color: rgba(160, 210, 235, 0.14);
+}
+
+.sheetLink:first-of-type {
+  border-top: 0;
+}
+
+@media (max-width: 860px) {
+  .links {
+    display: none;
+  }
+
+  .menuBtn {
+    display: block;
+  }
+}

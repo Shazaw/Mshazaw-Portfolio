@@ -1,0 +1,137 @@
+/* Homepage chapters — spec §5. */
+
+.main {
+  position: relative;
+  z-index: 2;
+}
+
+.chapter {
+  position: relative;
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 120px var(--gutter);
+}
+
+.hero {
+  min-height: 100vh;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(46px, 8.5vw, 104px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* Outlined-stroke word — the approved treatment, spent once in the hero. */
+.stroke {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--holo);
+  paint-order: stroke fill;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 4.5vw, 58px);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0 0 18px;
+}
+
+.sub {
+  color: var(--graphite);
+  max-width: 520px;
+  font-size: 17px;
+  margin: 0;
+}
+
+.heroSub {
+  margin-top: 26px;
+}
+
+.scrollcue {
+  margin-top: 64px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cueBar {
+  width: 1px;
+  height: 36px;
+  background: var(--holo);
+  transform-origin: center;
+  animation: cue 1.8s ease-in-out infinite;
+}
+
+@keyframes cue {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* --- CTF chapter stats: solid numerals vs outlined ones --- */
+
+.statrow {
+  display: flex;
+  gap: 64px;
+  margin-top: 34px;
+  flex-wrap: wrap;
+}
+
+.statNum {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(56px, 7vw, 92px);
+  line-height: 1;
+}
+
+.statNumOutlined {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--holo);
+}
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin-top: 8px;
+}
+
+.aboutBody {
+  max-width: 640px;
+  font-size: 17px;
+  color: var(--graphite);
+  margin: 0 0 18px;
+}
+
+.aboutBody strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .statrow {
+    gap: 36px;
+  }
+}

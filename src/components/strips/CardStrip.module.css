@@ -1,0 +1,211 @@
+/*
+ * Still-Gardens card strip — spec §7.
+ * The connected-block principle on white: one continuous slab spanning the
+ * whole viewport, cells sharing 1px hairlines, gap 0, radius 0. Never add a
+ * gap, a radius, or a translate here.
+ */
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(var(--strip-cols, 3), 1fr);
+  gap: 0;
+  margin-top: 44px;
+  perspective: 1100px;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--paper-pure);
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Corrected proportions (§7.5): image-dominant, never a thin strip. */
+  min-height: 540px;
+  background: var(--paper-pure);
+  border-right: 1px solid var(--hairline);
+  border-radius: 0;
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition:
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.cell:first-child {
+  border-left: 1px solid var(--hairline);
+}
+
+.cell:hover,
+.cell:focus-visible {
+  z-index: 3;
+  /* Inset ring — the shared hairlines must never double (§13.4). */
+  box-shadow: var(--shadow-lift), var(--ring-inset);
+}
+
+.visual {
+  position: relative;
+  flex: 1 1 300px;
+  min-height: 300px;
+  overflow: hidden;
+  background: var(--strip-visual-gradient);
+  transform: translateZ(0);
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(30px);
+  transition: transform var(--dur) var(--ease);
+}
+
+.art path {
+  fill: none;
+  stroke: var(--holo);
+  stroke-width: 1.3;
+  opacity: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.artMuted path {
+  stroke: #9fb8c6;
+  opacity: 0.5;
+}
+
+.cell:hover .art,
+.cell:focus-visible .art {
+  transform: translateZ(46px) scale(1.04);
+}
+
+/* Cyan scanline sweeping top→bottom over .8s on hover. */
+.scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(63, 198, 255, 0.1) 50%, transparent 100%);
+  transform: translateY(-100%);
+  transition: transform 0.8s ease;
+}
+
+.cell:hover .scan,
+.cell:focus-visible .scan {
+  transform: translateY(100%);
+}
+
+.body {
+  position: relative;
+  padding: 32px 36px 28px;
+  transform: translateZ(24px);
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+
+/*
+ * Sits over the top-right of the visual band, not the body: a two-token label
+ * can be wider than any padding a wrapping title would leave for it.
+ */
+.corner {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  opacity: 0.75;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+}
+
+.summary {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--graphite);
+  margin: 0;
+}
+
+.tags {
+  margin-top: 14px;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+
+.index {
+  color: var(--holo);
+}
+
+@media (max-width: 860px) {
+  .strip {
+    grid-template-columns: 1fr;
+  }
+
+  .cell {
+    min-height: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .cell:last-child {
+    border-bottom: 0;
+  }
+
+  .visual {
+    flex-basis: 200px;
+    min-height: 200px;
+  }
+
+  .body {
+    padding: 26px var(--gutter) 24px;
+  }
+
+  .title {
+    font-size: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No tilt, no scanline. The inset ring stays (§7). */
+  .cell {
+    transform: none !important;
+  }
+
+  .art,
+  .cell:hover .art {
+    transform: none;
+  }
+
+  .scan {
+    display: none;
+  }
+}

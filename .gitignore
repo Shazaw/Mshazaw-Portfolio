@@ -1,0 +1,28 @@
+node_modules
+.next
+out
+build
+dist
+*.log
+npm-debug.log*
+
+.env
+.env.local
+.env*.local
+
+# SQLite database + backups
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
+/data/backups
+
+# Payload generated media uploads
+/public/media
+
+.DS_Store
+*.pem
+.vercel
+next-env.d.ts
+/coverage
+.tsbuildinfo
+*.tsbuildinfo

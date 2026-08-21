@@ -1,0 +1,254 @@
+# HOLOGRID
+
+Portfolio site for **M. Ahsan Zaki Wiryawan** — a white, minimal, engineering-flavoured
+survey document. Opening any section steps into a **hologram chamber**: the page inverts to
+deep blue-black and the section's items materialise as a glowing cluster of cyan wireframe
+towers you can orbit. A toggle switches to **MOSAIC** — one connected slab of translucent
+cells. Everything is content-managed through Payload.
+
+Built to `docs/portfolio-spec-v2.md`; `docs/portfolio-prototype-v3.html` is the visual
+reference the chamber was ported from.
+
+---
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| CMS | Payload 3 embedded in the same app, admin at `/admin` |
+| Database | SQLite via `@payloadcms/db-sqlite` (migration path → Postgres) |
+| 3D | Vanilla Three.js, named imports, loaded via dynamic `import()` only when a scene will render |
+| Styling | Tailwind v4 for utilities + CSS Modules for the bespoke surfaces; all tokens in `src/styles/tokens.css` |
+| Scroll | Lenis + IntersectionObserver (one scroll system, never two) |
+| Deploy | Docker — Payload needs a persistent Node server |
+
+Every public page is statically generated. Content changes fan out through Payload
+`afterChange` / `afterDelete` hooks calling `revalidatePath`, with an hourly ISR floor as a
+safety net for out-of-band changes (a restored backup, a seed run).
+
+---
+
+## Quick start
+
+```bash
+npm install
+cp .env.example .env          # then set PAYLOAD_SECRET (openssl rand -hex 32)
+npm run seed                  # placeholder content + the first admin user
+npm run dev                   # http://localhost:3000, admin at /admin
+```
+
+`npm run seed` is idempotent — it matches documents by slug and updates in place.
+`npm run seed -- --fresh` wipes the survey collections first.
+
+> **The seeded content is placeholder.** It is grounded in the references carried by the
+> approved prototype, but every record should be verified and rewritten at `/admin` before
+> the site is published.
+
+### Environment
+
+| Variable | Purpose |
+|---|---|
+| `PAYLOAD_SECRET` | Signs Payload auth tokens. Required. |
+| `DATABASE_URI` | libsql URL, e.g. `file:./data/holo-grid.db`. |
+| `NEXT_PUBLIC_SERVER_URL` | Public origin — canonical URLs, sitemap, OG images. |
+| `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Only used to create the first admin user. |
+
+---
+
+## Content model
+
+Four **survey collections** share one shape and one set of controls:
+`projects`, `experiences`, `organizations`, `awards`.
+
+| Field | What it drives |
+|---|---|
+| `weight` (1–5) | Tower height in the chamber, ordering everywhere, and which items surface first. Index 0 is the tallest and sits at the centre of the cluster. |
+| `mosaicSpan` | `auto` lets the pattern algorithm decide; `2` / `3` / `4` pins a cell width for flagship work. |
+| `featured` + `featuredOrder` | Membership and order in that section's homepage card strip. |
+| `subtag` | The short mono tag beside the title. Defaults to the first tag. |
+| `summary` | The one line shown in mosaic cells and strip bodies. |
+| `description` | Rich text, fetched lazily when a popup opens — it never ships with the page. |
+| `published` | Unpublished documents are invisible to the public site. |
+| `stripArtwork` *(projects)* | Which wireframe motif draws in the homepage strip cell. `auto` picks one from the slug. |
+
+**CTF** is two collections. `ctf-competitions` holds the events; `ctf-challenges` attach to
+them and carry a `mode` of `solved` or `authored`. That single field drives the whole CTF
+area: `/ctf` lists only competitions with at least one challenge in the active mode, and
+`/ctf/[slug]` shows only the categories that are non-empty for that competition **and** mode.
+
+`profile` is a global: identity, hero lines, about copy, focus areas, skills, education,
+socials, CV link, and SEO defaults.
+
+---
+
+## Architecture notes
+
+```
+src/
+  app/(payload)/         admin mount + REST/GraphQL
+  app/(site)/            <html>, fonts, metadata
+    (light)/             homepage, /about — blueprint grid, paper navbar, footer
+    (dark)/              /projects /experience /organizations /awards /ctf — chamber palette
+    detail/[c]/[slug]/   lazily fetched popup bodies (rich text → HTML)
+  collections/           Payload schema
+  components/
+    chamber/             SectionView orchestrator + the Three.js engine
+    mosaic/ strips/      the two connected-block surfaces
+    cards/               the one detail popup
+    journey/ ctf/        homepage scene + CTF views
+  lib/                   data access, mosaic algorithm, formatting, hooks
+  seed/                  placeholder dataset
+```
+
+**Route groups carry the theme.** `(light)` and `(dark)` each render their own navbar, so the
+server markup is already correct — there is no white flash on the way into a chamber.
+
+**The mosaic is the product; the chamber is the fireworks.** Section pages server-render the
+mosaic and hydrate the chamber over it. Mobile, `prefers-reduced-motion`, no-WebGL and
+loader-timeout visitors keep the mosaic as their only view, over the static CSS gradient.
+
+**Nothing reads `searchParams`,** so every page stays statically generated. `?focus=<slug>`
+and `?mode=` are read and written on the client via `history.replaceState`.
+
+---
+
+## Scripts
+
+| Command | Does |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm run seed [-- --fresh]` | Placeholder content, idempotent |
+| `npm run migrate` | Apply migrations (required in production — schema push is dev-only) |
+| `npm run migrate:create <name>` | Generate a migration after a schema change |
+| `npm run generate:types` | Regenerate `src/payload-types.ts` and the admin import map |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test:unit` | Mosaic layout invariants + placement derivation |
+| `npm run test:e2e` | Browser behaviour suite (needs a server on `$BASE`) |
+| `npm run budget` | Measures the spec §10 performance budgets against a running build |
+
+### After a schema change
+
+```bash
+npm run generate:types
+npm run migrate:create <describe-the-change>
+```
+
+Commit the generated migration — production applies it on container start.
+
+---
+
+## Testing
+
+`npm run test:unit` proves the two pieces of logic with real invariants:
+
+- **Mosaic layout** — 4,000+ randomised cases assert every row sums to exactly 6 (a short
+  row gives the connected block a ragged edge, the one thing this layout cannot have) and
+  that editor pins survive at realistic density.
+- **Placement derivation** — a semifinal is not a final; 4th place is not a podium.
+
+`npm run test:e2e` drives a real browser over the built site: mode toggle and its
+persistence, mosaic → chamber fly-in, `?focus=` deep links, popup clamping, CTF mode
+filtering and the accordion, the reduced-motion and mobile fallbacks, markup semantics, and
+`dispose()` across ten chamber navigations.
+
+```bash
+npm run build && npm start &
+BASE=http://localhost:3000 npm run test:e2e
+BASE=http://localhost:3000 npm run budget
+```
+
+Current measurements (transferred, compressed):
+
+| Route | Route JS | 3D chunk | Page total |
+|---|---|---|---|
+| `/` | 160 KB | 131 KB | 402 KB |
+| `/about` | 158 KB | — | 266 KB |
+| `/projects` | 157 KB | 131 KB | 395 KB |
+
+Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
+
+---
+
+## Deployment
+
+Payload needs a persistent Node server, so this deploys as a long-running container.
+
+```bash
+export PAYLOAD_SECRET=$(openssl rand -hex 32)
+export NEXT_PUBLIC_SERVER_URL=https://your-domain
+docker compose up -d --build
+```
+
+The image applies migrations on start, so a fresh volume gets its schema on first boot and
+an existing one is brought up to date. Two volumes hold the state that matters:
+
+- `holo-data` → `/app/data` (SQLite)
+- `holo-media` → `/app/public/media` (uploads)
+
+The `backup` service takes a nightly `sqlite3 .backup` (safe on a live database — a plain
+file copy is not), gzips it, and prunes anything older than `RETAIN_DAYS`.
+
+**Restore:**
+
+```bash
+docker compose stop holo-grid
+docker run --rm -v holo-backups:/b -v holo-data:/d alpine:3.20 \
+  sh -c 'gunzip -c /b/holo-grid-<stamp>.db.gz > /d/holo-grid.db'
+docker compose start holo-grid
+```
+
+After restoring — or after any change that bypasses the admin — pages refresh on the hourly
+ISR floor. To see it immediately, save any document in `/admin`, which fires the
+revalidation hooks.
+
+`/healthz` reports liveness and database reachability, and backs the container healthcheck.
+
+---
+
+## Design system
+
+Tokens live in `src/styles/tokens.css`; nothing hard-codes a colour.
+
+- One accent: `--holo` `#3FC6FF`, on both light and dark surfaces.
+- Type: Space Grotesk (display) · IBM Plex Sans (body) · IBM Plex Mono (utility, always
+  uppercase, wide tracking). Self-hosted, latin subset, display face preloaded.
+- Motion: 200–400 ms on `cubic-bezier(.22,1,.36,1)`, one orchestrated moment per surface,
+  and `prefers-reduced-motion` kills all choreography.
+
+### The connected-block principle
+
+Cards never float as separate rounded islands. They form one continuous slab — full viewport
+width, cells separated by shared 1px hairlines, **zero gaps, zero border-radius**. This holds
+on white (homepage strips) and on dark (the mosaic). Hover states are always **inset** — an
+inset ring plus an inner glow — so shared hairlines never double.
+
+If you find yourself adding `gap`, `border-radius`, or a per-cell `transform: translate` to a
+mosaic or strip cell, stop: it's wrong.
+
+---
+
+## Deliberate deviations from spec v2.0
+
+Three numbers are derived rather than fixed, each because the fixed value broke the thing the
+spec was asking for. They are the only places the build departs from a stated figure.
+
+1. **Opening camera distance** (§8.2 fixes the orbit clamp at `[16, 66]` but not the opening
+   radius; the prototype used 40). A 14-tower cluster at radius 40 is cropped — you cannot
+   see the skyline. The chamber now derives the opening radius from the cluster that actually
+   exists, so the tallest beacon sits inside the frustum. It stays inside the specified clamp.
+
+2. **Resting camera target** (§8.3 gives `(0, 7, 0)`). With a 30-unit tower, y=7 puts the peak
+   outside the frustum at any radius inside the clamp. The resting target now lifts toward the
+   middle of the skyline, never below the spec's 7.
+
+3. **Popup viewport clamp** (§8.3 gives `x ∈ [220, w−220]`, `y ∈ [300, h−40]`). Those assume a
+   ~400×300 card; a long record grows taller and the fixed floor pushed its top off-screen. The
+   clamp is now driven by the card's measured box plus navbar clearance, which is what the
+   fixed numbers were approximating.
+
+Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
+(the mosaic renders every section), and particle points carry the shared radial texture —
+untextured points draw as hard squares, and one drifting near the camera became a solid cyan
+block.

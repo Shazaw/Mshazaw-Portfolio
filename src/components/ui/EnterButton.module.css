@@ -1,0 +1,32 @@
+.btn {
+  margin-top: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 14px 22px;
+  cursor: pointer;
+  width: fit-content;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.btn:hover,
+.btn:focus-visible {
+  background: var(--ink);
+  color: var(--holo);
+}
+
+.glyph {
+  font-size: 13px;
+  line-height: 1;
+}

@@ -1,0 +1,21 @@
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 3px 8px;
+  color: var(--graphite);
+  white-space: nowrap;
+}
+
+.onDark {
+  border-color: rgba(63, 198, 255, 0.3);
+  color: rgba(63, 198, 255, 0.85);
+}

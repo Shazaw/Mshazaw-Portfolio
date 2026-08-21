@@ -1,0 +1,163 @@
+/* Chamber page frame — spec §8.1. */
+
+.chamber {
+  position: fixed;
+  inset: 0;
+  background: var(--chamber);
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* The gradient behind a transparent-cleared canvas is what keeps the
+     chamber from feeling empty (§2.1). */
+  background: var(--chamber-gradient);
+  transition: filter var(--dur-slow) var(--ease);
+  touch-action: none;
+}
+
+.blurred {
+  filter: blur(7px) brightness(0.55);
+}
+
+/* Static gradient for the no-canvas fallback. */
+.staticBackdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--chamber-gradient);
+}
+
+.ui {
+  position: absolute;
+  z-index: 5;
+}
+
+.toggle {
+  top: calc(var(--nav-h) + 20px);
+  left: var(--gutter);
+  display: flex;
+  border: 1px solid rgba(63, 198, 255, 0.35);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(4, 7, 13, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.toggle button {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border: 0;
+  padding: 10px 16px;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.toggle button:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.toggle button[aria-pressed='true'] {
+  background: rgba(63, 198, 255, 0.16);
+  color: var(--holo);
+}
+
+.survey {
+  top: calc(var(--nav-h) + 26px);
+  right: var(--gutter);
+  text-align: right;
+}
+
+.hint {
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chip {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--holo);
+  background: rgba(4, 7, 13, 0.85);
+  border: 1px solid rgba(63, 198, 255, 0.4);
+  border-radius: 4px;
+  padding: 6px 10px;
+  transform: translate(-50%, -140%);
+  display: none;
+  white-space: nowrap;
+}
+
+/* CARDS layer sits above the blurred canvas; the glow leaking through is intentional. */
+.cards {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Clears the mode toggle pinned at the top-left. */
+  padding: calc(var(--nav-h) + 96px) 0 0;
+}
+
+.cardsHeader {
+  padding: 0 var(--gutter);
+}
+
+.cardsFoot {
+  padding: 26px var(--gutter) 60px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.notice {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(63, 198, 255, 0.6);
+}
+
+@media (max-width: 860px) {
+  .toggle {
+    left: var(--gutter);
+    top: calc(var(--nav-h) + 14px);
+  }
+
+  .survey {
+    display: none;
+  }
+
+  .hint {
+    display: none;
+  }
+
+  .cards {
+    padding-top: calc(var(--nav-h) + 30px);
+  }
+}

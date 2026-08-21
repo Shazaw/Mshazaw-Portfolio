@@ -1,0 +1,296 @@
+.page {
+  position: relative;
+  z-index: 2;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: calc(var(--nav-h) + 90px) var(--gutter) 120px;
+}
+
+.head {
+  position: relative;
+}
+
+.headGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 56px;
+  align-items: start;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(38px, 6vw, 76px);
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.role {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--holo);
+  margin: 16px 0 0;
+}
+
+.intro {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--graphite);
+  margin: 24px 0 0;
+  max-width: 560px;
+}
+
+.portrait {
+  position: relative;
+  border: 1px solid var(--hairline);
+  background: var(--strip-visual-gradient);
+  overflow: hidden;
+}
+
+.portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: grayscale(1) contrast(1.05);
+  mix-blend-mode: multiply;
+}
+
+.survey {
+  margin-top: 40px;
+}
+
+/* Connected strip of focus areas — same principle as the homepage strips. */
+.focusStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0;
+  width: 100vw;
+  margin: 64px 0 0 calc(50% - 50vw);
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--paper-pure);
+}
+
+.focusCell {
+  padding: 34px 32px 32px;
+  border-right: 1px solid var(--hairline);
+  position: relative;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.focusCell:last-child {
+  border-right: 0;
+}
+
+.focusCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(63, 198, 255, 0);
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.focusCell:hover::after {
+  box-shadow: var(--ring-inset);
+}
+
+.focusTag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+
+.focusTitle {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 10px 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.focusBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--graphite);
+  margin: 0;
+}
+
+.prose {
+  max-width: 680px;
+  margin-top: 72px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--graphite);
+}
+
+.prose :global(p) {
+  margin: 0 0 18px;
+}
+
+.prose :global(h2),
+.prose :global(h3) {
+  font-family: var(--font-display);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 40px 0 14px;
+}
+
+.prose :global(h2) {
+  font-size: 28px;
+}
+
+.prose :global(h3) {
+  font-size: 20px;
+}
+
+.prose :global(ul),
+.prose :global(ol) {
+  margin: 0 0 18px;
+  padding-left: 20px;
+}
+
+.prose :global(li) {
+  margin-bottom: 8px;
+}
+
+.prose :global(a) {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--holo);
+  text-underline-offset: 3px;
+}
+
+.prose :global(blockquote) {
+  border-left: 1px solid var(--holo);
+  padding-left: 18px;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+
+.block {
+  margin-top: 80px;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rowPeriod {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowMain strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rowSub {
+  color: var(--graphite);
+  font-size: 15px;
+}
+
+.rowDetail {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+  border-left: 1px solid var(--hairline);
+}
+
+.skillGroup {
+  padding: 26px 28px 28px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.skillTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin: 0 0 14px;
+  font-weight: 400;
+}
+
+.skillList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.contact {
+  margin-top: 80px;
+}
+
+.mail {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.4vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.mail:hover {
+  border-color: var(--holo);
+}
+
+@media (max-width: 860px) {
+  .headGrid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .portrait {
+    max-width: 280px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

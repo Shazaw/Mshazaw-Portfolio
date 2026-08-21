@@ -1,0 +1,4 @@
+/* Nudge the Payload admin toward the site's palette without fighting its design system. */
+:root {
+  --theme-success-500: #3fc6ff;
+}

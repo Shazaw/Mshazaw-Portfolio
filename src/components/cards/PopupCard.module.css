@@ -1,0 +1,224 @@
+/* Floating glass detail card — spec §8.3. Never a full-height panel. */
+
+.popup {
+  position: absolute;
+  z-index: 12;
+  width: min(400px, 88vw);
+  max-height: min(58vh, 520px);
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-popup);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(63, 198, 255, 0.35);
+  border-radius: 12px;
+  color: var(--on-dark);
+  padding: 26px 28px;
+  box-shadow: var(--shadow-popup);
+  opacity: 0;
+  transform: translate(-50%, -100%) scale(0.92);
+  pointer-events: none;
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.popup.open {
+  opacity: 1;
+  transform: translate(-50%, -100%) scale(1);
+  pointer-events: auto;
+}
+
+/* 9px stem pointing down at the block it belongs to. */
+.popup.anchored::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 1px;
+  height: 9px;
+  background: rgba(63, 198, 255, 0.6);
+}
+
+/* Standalone (mosaic / fallback): centred, no stem, no tracking. */
+.popup.standalone {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+.popup.standalone.open {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.index {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 8px 0 4px;
+  color: #fff;
+  padding-right: 24px;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 12px;
+}
+
+.scroller {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-right: -8px;
+  padding-right: 8px;
+}
+
+.body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(232, 238, 242, 0.8);
+}
+
+.body p {
+  margin: 0 0 10px;
+}
+
+.body p:last-child {
+  margin-bottom: 0;
+}
+
+.body ul,
+.body ol {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.body li {
+  margin-bottom: 4px;
+}
+
+.body a {
+  color: var(--holo);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.body h1,
+.body h2,
+.body h3,
+.body h4 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 14px 0 6px;
+}
+
+.body code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: rgba(63, 198, 255, 0.1);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.highlights {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.highlights li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(232, 238, 242, 0.8);
+  margin-bottom: 6px;
+}
+
+.highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 8px;
+  height: 1px;
+  background: var(--holo);
+}
+
+.loading {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(63, 198, 255, 0.6);
+}
+
+.tags {
+  margin-top: 14px;
+}
+
+.links {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.links a {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--holo);
+  text-decoration: none;
+  border: 1px solid rgba(63, 198, 255, 0.4);
+  border-radius: 5px;
+  padding: 7px 12px;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.links a:hover,
+.links a:focus-visible {
+  background: rgba(63, 198, 255, 0.14);
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.close:hover,
+.close:focus-visible {
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .popup {
+    max-height: 62vh;
+    padding: 22px 22px;
+  }
+}
