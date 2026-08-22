@@ -21,7 +21,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`year\` numeric NOT NULL,
   	\`subtag\` text,
   	\`description\` text,
-  	\`cover_id\` integer,
+  	\`repo_url\` text,
+  	\`live_url\` text,
+  	\`role\` text,
+  	\`screenshot_id\` integer,
   	\`strip_artwork\` text DEFAULT 'auto',
   	\`weight\` numeric DEFAULT 3 NOT NULL,
   	\`mosaic_span\` text DEFAULT 'auto',
@@ -30,11 +33,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`published\` integer DEFAULT true,
   	\`updated_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
   	\`created_at\` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
-  	FOREIGN KEY (\`cover_id\`) REFERENCES \`media\`(\`id\`) ON UPDATE no action ON DELETE set null
+  	FOREIGN KEY (\`screenshot_id\`) REFERENCES \`media\`(\`id\`) ON UPDATE no action ON DELETE set null
   );
   `)
   await db.run(sql`CREATE UNIQUE INDEX \`projects_slug_idx\` ON \`projects\` (\`slug\`);`)
-  await db.run(sql`CREATE INDEX \`projects_cover_idx\` ON \`projects\` (\`cover_id\`);`)
+  await db.run(sql`CREATE INDEX \`projects_screenshot_idx\` ON \`projects\` (\`screenshot_id\`);`)
   await db.run(sql`CREATE INDEX \`projects_updated_at_idx\` ON \`projects\` (\`updated_at\`);`)
   await db.run(sql`CREATE INDEX \`projects_created_at_idx\` ON \`projects\` (\`created_at\`);`)
   await db.run(sql`CREATE TABLE \`projects_texts\` (

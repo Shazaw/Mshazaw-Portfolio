@@ -41,9 +41,10 @@ npm run dev                   # http://localhost:3000, admin at /admin
 `npm run seed` is idempotent — it matches documents by slug and updates in place.
 `npm run seed -- --fresh` wipes the survey collections first.
 
-> **The seeded content is placeholder.** It is grounded in the references carried by the
-> approved prototype, but every record should be verified and rewritten at `/admin` before
-> the site is published.
+> **Projects are real** — pulled from github.com/Shazaw plus the two engagements without a
+> repository, with screenshots captured from the running projects (see `seed-assets/`).
+> **Everything else is still placeholder** and should be verified and rewritten at `/admin`
+> before the site is published.
 
 ### Environment
 
@@ -55,6 +56,25 @@ npm run dev                   # http://localhost:3000, admin at /admin
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Only used to create the first admin user. |
 
 ---
+
+## Project screenshots
+
+`seed-assets/` holds the images the seed uploads into Payload media on first run. They were
+captured from the projects themselves rather than mocked up:
+
+| Source | Projects |
+|---|---|
+| Screenshots the repo already published | NetGuard, AutoSIEM, BHOB |
+| Cloned and run locally, then captured | AeroRoute (Vite dev server), RedOps Collab (prototype, driven through its demo login), CloudLibrary (static front end — the droplet is offline) |
+| Live site | BEM UGM, 180DC UGM |
+
+Four projects have no screenshot and fall back to wireframe artwork. CrediWise is a SwiftUI app
+with a FastAPI backend and has no web UI to capture; Acme Market, the Penetration Testing Labs
+and the CTF Library challenges are **intentionally vulnerable services** (upload RCE, SUID
+escalation, SQL injection) and were deliberately not stood up to take a picture of.
+
+To add or replace one, upload it against the project in `/admin` — the field is optional and
+nothing else has to change.
 
 ## Content model
 
@@ -70,7 +90,10 @@ Four **survey collections** share one shape and one set of controls:
 | `summary` | The one line shown in mosaic cells and strip bodies. |
 | `description` | Rich text, fetched lazily when a popup opens — it never ships with the page. |
 | `published` | Unpublished documents are invisible to the public site. |
-| `stripArtwork` *(projects)* | Which wireframe motif draws in the homepage strip cell. `auto` picks one from the slug. |
+| `stripArtwork` *(projects)* | Which wireframe motif draws when there is no screenshot. `auto` picks one from the slug. |
+| `screenshot` *(projects)* | **Optional** upload. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one the generated wireframe artwork is used, so no project ever looks broken for lacking an image. |
+| `repoUrl` / `liveUrl` *(projects)* | Drive the GITHUB and LIVE buttons. Anything else goes in `links`. |
+| `role` *(projects)* | Your part in it, when it needs saying — e.g. Security engineer, IT manager. |
 
 **CTF** is two collections. `ctf-competitions` holds the events; `ctf-challenges` attach to
 them and carry a `mode` of `solved` or `authored`. That single field drives the whole CTF
@@ -81,6 +104,21 @@ area: `/ctf` lists only competitions with at least one challenge in the active m
 socials, CV link, and SEO defaults.
 
 ---
+
+## The two detail surfaces
+
+The same record answers a different question depending on where you open it, so it is
+deliberately shown two different ways:
+
+| | GRID (chamber) | CARDS (mosaic) |
+|---|---|---|
+| Form | Glass popup anchored to the tower | Cell expanded inline at full block width |
+| Content | Summary, tech stack, links | Screenshot, full write-up, tech stack, links |
+| Fetches rich text | No | Yes, once per record |
+| Dismiss | ✕, Escape, or click empty space | ✕ or Escape |
+
+The chamber is for orbiting and sampling; the mosaic is for reading. Loading the long write-up
+into a popup that floats over a 3D scene would be the wrong shape for both.
 
 ## Architecture notes
 
@@ -163,9 +201,9 @@ Current measurements (transferred, compressed):
 
 | Route | Route JS | 3D chunk | Page total |
 |---|---|---|---|
-| `/` | 160 KB | 131 KB | 402 KB |
-| `/about` | 158 KB | — | 266 KB |
-| `/projects` | 157 KB | 131 KB | 395 KB |
+| `/` | 173 KB | 131 KB | 440 KB |
+| `/about` | 172 KB | — | 282 KB |
+| `/projects` | 170 KB | 131 KB | 412 KB |
 
 Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
 
@@ -231,6 +269,9 @@ outside beneath it. Hover tilts the media only, so the small type below stays cr
 **zero gaps and zero border-radius**, and hover states are always **inset** — an inset ring
 plus an inner glow — so shared hairlines never double. Adding a `gap`, a `border-radius`, or a
 per-cell `transform: translate` here is wrong.
+
+Opening a record in the mosaic promotes it to the head of the block at full width and re-flows
+the rest beneath it — the slab stays welded, it just re-orders around whatever is open.
 
 **Both blocks sit in the page shell** — inset ~3.3% from each viewport edge, matching the
 reference, and capped at 1760px so an ultrawide doesn't stretch a six-column mosaic. Nav,

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useRef } from 'react'
 import { indexOf } from '@/lib/format'
@@ -9,10 +10,11 @@ import type { SurveyItem } from '@/lib/types'
 import styles from './CardStrip.module.css'
 
 /**
- * One Still-Gardens card: wireframe artwork with the title laid over its
- * bottom edge, and the mono meta sitting outside beneath it.
+ * One Still-Gardens card: a real screenshot where the project has one and the
+ * generated wireframe motif where it doesn't, with the title laid over the
+ * bottom edge and the description, full stack and links below.
  *
- * The tilt is applied to the media block only — the caption below stays flat so
+ * The tilt applies to the media block only — the caption below stays flat so
  * its small type never smears.
  */
 export const StripCell = ({
@@ -30,8 +32,8 @@ export const StripCell = ({
 }) => {
   const mediaRef = useRef<HTMLDivElement>(null)
   const reduced = usePrefersReducedMotion()
-  const art = buildArtwork(item.artwork)
   const lead = variant === 'lead'
+  const art = item.image ? null : buildArtwork(item.artwork)
   // `slice` crops to fill, which over-zooms a motif on a card this large.
   const fit = lead ? 'xMidYMax meet' : 'xMidYMax slice'
 
@@ -55,32 +57,48 @@ export const StripCell = ({
 
   return (
     <article
-      className={[styles.card, lead ? styles.lead : styles.sideCard].join(' ')}
+      className={[styles.card, lead ? styles.lead : styles.sideCard, item.image ? styles.hasShot : '']
+        .filter(Boolean)
+        .join(' ')}
       onMouseMove={onMove}
       onMouseLeave={reset}
       onBlur={reset}
     >
       <div className={styles.media} ref={mediaRef}>
-        <svg
-          className={styles.art}
-          viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
-          preserveAspectRatio={fit}
-          aria-hidden="true"
-        >
-          {art.main.map((d, i) => (
-            <path key={`m${i}`} d={d} />
-          ))}
-        </svg>
-        <svg
-          className={`${styles.art} ${styles.artMuted}`}
-          viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
-          preserveAspectRatio={fit}
-          aria-hidden="true"
-        >
-          {art.muted.map((d, i) => (
-            <path key={`u${i}`} d={d} />
-          ))}
-        </svg>
+        {item.image ? (
+          <Image
+            className={styles.shot}
+            src={item.image.url}
+            alt={item.image.alt}
+            width={item.image.width}
+            height={item.image.height}
+            sizes={lead ? '(max-width: 860px) 100vw, 62vw' : '(max-width: 860px) 100vw, 30vw'}
+            priority={lead}
+          />
+        ) : (
+          <>
+            <svg
+              className={styles.art}
+              viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
+              preserveAspectRatio={fit}
+              aria-hidden="true"
+            >
+              {art?.main.map((d, i) => (
+                <path key={`m${i}`} d={d} />
+              ))}
+            </svg>
+            <svg
+              className={`${styles.art} ${styles.artMuted}`}
+              viewBox={`${ART_VIEWBOX.x} ${ART_VIEWBOX.y} ${ART_VIEWBOX.w} ${ART_VIEWBOX.h}`}
+              preserveAspectRatio={fit}
+              aria-hidden="true"
+            >
+              {art?.muted.map((d, i) => (
+                <path key={`u${i}`} d={d} />
+              ))}
+            </svg>
+          </>
+        )}
 
         <span className={styles.scan} aria-hidden="true" />
         <span className={styles.scrim} aria-hidden="true" />
@@ -107,11 +125,38 @@ export const StripCell = ({
 
       <div className={styles.caption}>
         <span>
-          {item.year} · {item.kicker}
+          {item.year} · {item.role ?? item.kicker}
         </span>
         <span className={styles.index}>{indexOf(index, total)}</span>
       </div>
+
       <p className={styles.summary}>{item.summary}</p>
+
+      {item.tags.length > 0 ? (
+        <div className={styles.stack} aria-label="Tech stack">
+          {item.tags.map((tag) => (
+            <span key={tag} className={styles.chip}>
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {item.links.length > 0 ? (
+        <div className={styles.links}>
+          {item.links.map((link) => (
+            <a
+              key={link.url}
+              className={styles.linkBtn}
+              href={link.url}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              {link.label} ↗
+            </a>
+          ))}
+        </div>
+      ) : null}
     </article>
   )
 }

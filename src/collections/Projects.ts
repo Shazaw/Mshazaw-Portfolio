@@ -7,7 +7,6 @@ import {
   slugField,
   subtagField,
   summaryField,
-  tagsField,
   weightField,
 } from './fields/shared'
 import { revalidateCollection, revalidateCollectionDelete } from './hooks/revalidate'
@@ -56,14 +55,53 @@ export const Projects: CollectionConfig = {
       ],
     },
     subtagField,
-    tagsField,
+    {
+      name: 'tags',
+      type: 'text',
+      hasMany: true,
+      label: 'Tech stack',
+      admin: {
+        description:
+          'The full stack, in the order you want it read. Shown complete on the homepage card and in the expanded mosaic cell.',
+      },
+    },
     {
       name: 'description',
       type: 'richText',
       admin: { description: 'Long form. Loaded lazily when the popup card opens.' },
     },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'repoUrl',
+          type: 'text',
+          label: 'Repository URL',
+          admin: { width: '50%', description: 'Drives the GITHUB button.' },
+        },
+        {
+          name: 'liveUrl',
+          type: 'text',
+          label: 'Live URL',
+          admin: { width: '50%', description: 'Drives the LIVE button.' },
+        },
+      ],
+    },
+    {
+      name: 'role',
+      type: 'text',
+      admin: { description: 'Your part in it, when it needs saying — e.g. Security engineer, IT manager.' },
+    },
     linksField,
-    { name: 'cover', type: 'upload', relationTo: 'media' },
+    {
+      name: 'screenshot',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description:
+          'Optional. A real screenshot of the running project — shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.',
+      },
+    },
     {
       name: 'stripArtwork',
       type: 'select',

@@ -14,6 +14,7 @@ export const PopupCard = ({
   collection,
   singular,
   anchored,
+  compact = false,
   onClose,
   containerRef,
 }: {
@@ -21,6 +22,7 @@ export const PopupCard = ({
   collection: string
   singular: string
   anchored: boolean
+  compact?: boolean
   onClose: () => void
   containerRef?: React.RefObject<HTMLDivElement | null>
 }) => {
@@ -32,7 +34,7 @@ export const PopupCard = ({
       index={(target?.index ?? 0) + 1}
       singular={singular}
       title={item?.title ?? ''}
-      meta={[item?.periodLabel ?? String(item?.year ?? ''), `Weight ${item?.weight ?? 0}/5`, item?.kicker ?? '']
+      meta={[item?.periodLabel ?? String(item?.year ?? ''), item?.role ?? item?.kicker ?? '', `Weight ${item?.weight ?? 0}/5`]
         .filter(Boolean)
         .join(' · ')}
       fallbackBody={item?.summary ?? ''}
@@ -41,6 +43,7 @@ export const PopupCard = ({
       collection={collection}
       slug={item?.slug ?? null}
       anchored={anchored}
+      compact={compact}
       onClose={onClose}
       containerRef={containerRef}
     />

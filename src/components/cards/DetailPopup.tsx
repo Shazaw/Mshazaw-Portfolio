@@ -25,6 +25,12 @@ export interface DetailPopupProps {
   collection: string
   slug: string | null
   anchored: boolean
+  /**
+   * Short form: the summary, the stack and the links — no lazily fetched
+   * write-up. The chamber uses this; the mosaic's expanded cell carries the
+   * long version instead.
+   */
+  compact?: boolean
   onClose: () => void
   containerRef?: React.RefObject<HTMLDivElement | null>
 }
@@ -46,12 +52,14 @@ export const DetailPopup = ({
   collection,
   slug,
   anchored,
+  compact = false,
   onClose,
   containerRef,
 }: DetailPopupProps) => {
   const localRef = useRef<HTMLDivElement>(null)
   const ref = containerRef ?? localRef
-  const { detail, loading } = useItemDetail(collection, open ? slug : null)
+  // Compact never fetches — that request only exists to fill the long form.
+  const { detail, loading } = useItemDetail(collection, open && !compact ? slug : null)
 
   const handleEscape = useCallback(() => onClose(), [onClose])
   useFocusTrap(ref, open, handleEscape)
@@ -84,7 +92,7 @@ export const DetailPopup = ({
           <div className={styles.meta}>{meta}</div>
 
           <div className={styles.scroller}>
-            {detail?.highlights?.length ? (
+            {!compact && detail?.highlights?.length ? (
               <ul className={styles.highlights}>
                 {detail.highlights.map((line) => (
                   <li key={line}>{line}</li>
@@ -92,7 +100,7 @@ export const DetailPopup = ({
               </ul>
             ) : null}
 
-            {detail?.html ? (
+            {!compact && detail?.html ? (
               <div className={styles.body} dangerouslySetInnerHTML={{ __html: detail.html }} />
             ) : loading ? (
               <p className={styles.loading}>Loading record…</p>
@@ -101,7 +109,7 @@ export const DetailPopup = ({
             ) : null}
           </div>
 
-          <TagList tags={shownTags} onDark max={5} className={styles.tags} />
+          <TagList tags={shownTags} onDark className={styles.tags} />
 
           {shownLinks.length > 0 ? (
             <div className={styles.links}>

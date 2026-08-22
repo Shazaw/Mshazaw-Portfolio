@@ -135,8 +135,29 @@
           "notNull": false,
           "autoincrement": false
         },
-        "cover_id": {
-          "name": "cover_id",
+        "repo_url": {
+          "name": "repo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "live_url": {
+          "name": "live_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "screenshot_id": {
+          "name": "screenshot_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -214,10 +235,10 @@
           ],
           "isUnique": true
         },
-        "projects_cover_idx": {
-          "name": "projects_cover_idx",
+        "projects_screenshot_idx": {
+          "name": "projects_screenshot_idx",
           "columns": [
-            "cover_id"
+            "screenshot_id"
           ],
           "isUnique": false
         },
@@ -237,12 +258,12 @@
         }
       },
       "foreignKeys": {
-        "projects_cover_id_media_id_fk": {
-          "name": "projects_cover_id_media_id_fk",
+        "projects_screenshot_id_media_id_fk": {
+          "name": "projects_screenshot_id_media_id_fk",
           "tableFrom": "projects",
           "tableTo": "media",
           "columnsFrom": [
-            "cover_id"
+            "screenshot_id"
           ],
           "columnsTo": [
             "id"
@@ -3838,6 +3859,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "bf443701-5b27-4d4f-9021-d24cdf870f4a",
+  "id": "8c88cd97-28a8-4dc0-be08-38e9ffe8df63",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

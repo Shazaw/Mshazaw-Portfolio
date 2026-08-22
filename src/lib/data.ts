@@ -7,6 +7,7 @@ import { SECTIONS } from './sections'
 import { CTF_CATEGORY_ORDER } from './ctf'
 import type {
   ChamberNode,
+  SurveyImage,
   CtfCompetitionItem,
   CtfChallengeItem,
   CtfStats,
@@ -62,11 +63,53 @@ const cornerLabel = (tags: string[], subtag: string | null, fallback: string): s
 const artworkFor = (value: unknown, slug: string): string =>
   typeof value === 'string' && value !== 'auto' ? value : `auto:${slug}`
 
+/**
+ * Screenshots are optional; the UI falls back to generated artwork without one.
+ *
+ * Payload reports uploads at `/api/media/file/<name>`, which is a dynamic route.
+ * The same files sit in `public/media`, so the static path is preferred — it is
+ * cacheable and `next/image` can optimise it straight off disk.
+ */
+const toImage = (value: unknown, fallbackAlt: string): SurveyImage | null => {
+  if (!value || typeof value !== 'object') return null
+  const media = value as {
+    url?: string | null
+    filename?: string | null
+    width?: number | null
+    height?: number | null
+    alt?: string | null
+  }
+  const url = media.filename ? `/media/${media.filename}` : media.url
+  if (!url) return null
+  return {
+    url,
+    width: media.width ?? 1440,
+    height: media.height ?? 900,
+    alt: media.alt || fallbackAlt,
+  }
+}
+
+/** Convenience links get a stable label so the buttons read the same everywhere. */
+const primaryLinks = (
+  repoUrl: unknown,
+  liveUrl: unknown,
+  extra: SurveyLink[],
+): SurveyLink[] => {
+  const links: SurveyLink[] = []
+  if (typeof repoUrl === 'string' && repoUrl) links.push({ label: 'GITHUB', url: repoUrl })
+  if (typeof liveUrl === 'string' && liveUrl) links.push({ label: 'LIVE', url: liveUrl })
+  for (const link of extra) {
+    if (!links.some((existing) => existing.url === link.url)) links.push(link)
+  }
+  return links
+}
+
 /* -------------------------------------------------------- normalisers ---- */
 
 const fromProject = (doc: Project): SurveyItem => {
   const tags = toTags(doc.tags)
   const subtag = doc.subtag ? upper(doc.subtag) : (tags[0] ?? null)
+  const links = primaryLinks(doc.repoUrl, doc.liveUrl, toLinks(doc.links))
   return {
     id: String(doc.id),
     slug: doc.slug ?? '',
@@ -83,8 +126,12 @@ const fromProject = (doc: Project): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: artworkFor(doc.stripArtwork, doc.slug ?? doc.title),
-    links: toLinks(doc.links),
-    hasDetail: hasRichText(doc.description as never) || toLinks(doc.links).length > 0,
+    image: toImage(doc.screenshot, doc.title),
+    role: doc.role ?? null,
+    repoUrl: doc.repoUrl ?? null,
+    liveUrl: doc.liveUrl ?? null,
+    links,
+    hasDetail: hasRichText(doc.description as never) || links.length > 0,
   }
 }
 
@@ -107,6 +154,10 @@ const fromExperience = (doc: Experience): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
+    image: null,
+    role: null,
+    repoUrl: null,
+    liveUrl: null,
     links: toLinks(doc.links),
     hasDetail:
       hasRichText(doc.description as never) ||
@@ -134,6 +185,10 @@ const fromOrganization = (doc: Organization): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
+    image: null,
+    role: null,
+    repoUrl: null,
+    liveUrl: null,
     links: toLinks(doc.links),
     hasDetail:
       hasRichText(doc.description as never) ||
@@ -161,6 +216,10 @@ const fromAward = (doc: Award): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
+    image: null,
+    role: null,
+    repoUrl: null,
+    liveUrl: null,
     links: toLinks(doc.links),
     hasDetail: hasRichText(doc.description as never) || toLinks(doc.links).length > 0,
   }
@@ -183,7 +242,8 @@ export const getSectionItems = cache(async (key: SectionKey): Promise<SurveyItem
     where: { published: { equals: true } },
     sort: [...ORDER_SORT],
     limit: 200,
-    depth: 0,
+    // depth 1 populates the screenshot upload; nothing deeper is needed.
+    depth: 1,
     pagination: false,
   })
 

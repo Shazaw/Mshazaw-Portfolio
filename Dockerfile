@@ -47,6 +47,8 @@ COPY --from=build --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=build --chown=nextjs:nodejs /app/next.config.mjs ./next.config.mjs
 COPY --from=build --chown=nextjs:nodejs /app/src ./src
 COPY --from=build --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
+# Screenshots the seed uploads into Payload media on first run.
+COPY --from=build --chown=nextjs:nodejs /app/seed-assets ./seed-assets
 
 COPY --from=build --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
 

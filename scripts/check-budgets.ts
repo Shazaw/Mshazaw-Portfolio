@@ -21,31 +21,30 @@ interface Measurement {
 }
 
 /** Three.js is the only dependency big enough to need its own budget. */
-const isThreeChunk = (size: number, initiatedLate: boolean) => initiatedLate && size > 100 * KB
+const isThreeChunk = (size: number, lazy: boolean) => lazy && size > 100 * KB
 
 const measure = async (page: Page, route: string, settleMs: number): Promise<Measurement> => {
-  const early = new Set<string>()
-
   await page.goto(`${BASE}${route}`, { waitUntil: 'load' })
-  // Everything already transferred at `load` is part of the route's own cost.
-  for (const url of await page.evaluate(() =>
-    performance.getEntriesByType('resource').map((e) => e.name),
-  )) {
-    early.add(url)
-  }
-
   await page.waitForTimeout(settleMs)
 
-  const entries = (await page.evaluate(() =>
-    performance.getEntriesByType('resource').map((entry) => {
+  /*
+   * A chunk counts as lazy when it was requested after the load event — which
+   * is exactly what a dynamic import does. Snapshotting the resource list at
+   * `load` instead races the import: on the homepage the 3D chunk starts a few
+   * milliseconds before the snapshot and gets billed to the route.
+   */
+  const entries = (await page.evaluate(() => {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+    return performance.getEntriesByType('resource').map((entry) => {
       const resource = entry as PerformanceResourceTiming
       return {
         name: resource.name,
         size: resource.encodedBodySize || resource.transferSize || 0,
         type: resource.initiatorType,
+        lazy: resource.startTime > (nav?.loadEventEnd ?? 0),
       }
-    }),
-  )) as { name: string; size: number; type: string }[]
+    })
+  })) as { name: string; size: number; type: string; lazy: boolean }[]
 
   let routeJs = 0
   let threeJs = 0
@@ -54,7 +53,7 @@ const measure = async (page: Page, route: string, settleMs: number): Promise<Mea
   for (const entry of entries) {
     total += entry.size
     if (!/\.js(\?|$)/.test(entry.name)) continue
-    if (isThreeChunk(entry.size, !early.has(entry.name))) threeJs += entry.size
+    if (isThreeChunk(entry.size, entry.lazy)) threeJs += entry.size
     else routeJs += entry.size
   }
 

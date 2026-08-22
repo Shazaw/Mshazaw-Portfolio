@@ -1,4 +1,7 @@
 import 'dotenv/config'
+import path from 'path'
+import { existsSync } from 'fs'
+import { fileURLToPath } from 'url'
 import { getPayload, type Payload } from 'payload'
 import config from '../payload.config'
 import { projects } from './projects'
@@ -14,6 +17,52 @@ import { challenges, competitions } from './ctf'
  */
 
 const FRESH = process.argv.includes('--fresh')
+
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+const ASSET_DIR = path.resolve(dirname, '../../seed-assets')
+
+/**
+ * Uploads a screenshot from /seed-assets into the media collection, matched by
+ * filename so re-running the seed reuses the existing document rather than
+ * piling up duplicates. Returns null when the file is absent — screenshots are
+ * optional and the UI falls back to generated artwork.
+ */
+const uploadScreenshot = async (
+  payload: Payload,
+  filename: string,
+  alt: string,
+): Promise<string | number | null> => {
+  const filePath = path.join(ASSET_DIR, filename)
+  if (!existsSync(filePath)) {
+    console.warn(`  ! missing asset ${filename} — project will fall back to artwork`)
+    return null
+  }
+
+  const existing = await payload.find({
+    collection: 'media',
+    where: { filename: { equals: filename } },
+    limit: 1,
+    depth: 0,
+  })
+
+  if (existing.docs[0]) {
+    const updated = await payload.update({
+      collection: 'media',
+      id: existing.docs[0].id,
+      data: { alt },
+      depth: 0,
+    })
+    return updated.id
+  }
+
+  const created = await payload.create({
+    collection: 'media',
+    data: { alt },
+    filePath,
+    depth: 0,
+  })
+  return created.id
+}
 
 type AnyCollection =
   | 'projects'
@@ -101,6 +150,15 @@ const run = async () => {
   if (FRESH) {
     console.log('· wiping survey collections')
     await wipe(payload)
+  } else {
+    // Documents whose slug is no longer in the dataset are stale placeholders.
+    const keep = new Set(projects.map((p) => p.slug))
+    const live = await payload.find({ collection: 'projects', limit: 500, depth: 0, pagination: false })
+    const stale = live.docs.filter((d) => !keep.has((d as { slug?: string }).slug as never))
+    for (const d of stale) {
+      await payload.delete({ collection: 'projects', id: d.id })
+    }
+    if (stale.length) console.log(`· removed ${stale.length} stale project(s)`)
   }
 
   console.log('· users')
@@ -110,11 +168,20 @@ const run = async () => {
   await payload.updateGlobal({ slug: 'profile', data: profileSeed as never, depth: 0 })
 
   console.log('· projects')
+  let withShots = 0
   for (const project of projects) {
-    const { slug, ...rest } = project
-    await upsert(payload, 'projects', slug, { ...rest, published: true })
+    const { slug, screenshot, ...rest } = project as typeof project & { screenshot?: string }
+    const mediaId = screenshot
+      ? await uploadScreenshot(payload, screenshot, `${project.title} — screenshot`)
+      : null
+    if (mediaId) withShots += 1
+    await upsert(payload, 'projects', slug, {
+      ...rest,
+      screenshot: mediaId,
+      published: true,
+    })
   }
-  console.log(`  ${projects.length} projects`)
+  console.log(`  ${projects.length} projects (${withShots} with screenshots)`)
 
   console.log('· experiences')
   for (const experience of experiences) {
@@ -172,7 +239,8 @@ const run = async () => {
 
   console.log('─'.repeat(60))
   console.log('Seed complete.')
-  console.log('NOTE: every record above is PLACEHOLDER content. Verify and rewrite it at /admin.\n')
+  console.log('  projects        — real, from github.com/Shazaw plus two engagements.')
+  console.log('  everything else — PLACEHOLDER. Verify and rewrite it at /admin.\n')
 
   process.exit(0)
 }

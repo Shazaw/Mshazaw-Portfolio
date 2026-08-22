@@ -17,7 +17,6 @@ type Mode = 'grid' | 'cards'
 
 const LOADER_MIN_MS = 650
 const LOADER_TIMEOUT_MS = 4000
-const MODE_SWAP_DELAY_MS = 120
 
 /**
  * A section page. The mosaic is the server-rendered default; the chamber
@@ -55,6 +54,8 @@ export const SectionView = ({
   const [loading, setLoading] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const [selected, setSelected] = useState<PopupTarget | null>(null)
+  // CARDS mode opens a record inline instead of over the block.
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(null)
   const [chip, setChip] = useState<string>('')
 
   const storageKey = `holo:mode:${section.key}`
@@ -200,33 +201,35 @@ export const SectionView = ({
 
   useEffect(() => {
     engineRef.current?.setLowFps(mode === 'cards')
-    if (mode === 'cards') {
-      engineRef.current?.deselect()
-    }
+    if (mode === 'cards') engineRef.current?.deselect()
+    else setExpandedSlug(null)
   }, [mode])
 
+  /**
+   * CARDS opens the record inline: the block re-orders around it and the full
+   * write-up, stack and links come with it. The chamber's anchored popup stays
+   * deliberately short, so the two views answer different questions.
+   */
   const onMosaicSelect = useCallback(
-    (slug: string, index: number) => {
-      if (!capable) {
-        // No chamber to fly into — the popup opens over the mosaic instead.
-        openIndex(index)
-        return
+    (slug: string) => {
+      setExpandedSlug((current) => (current === slug ? null : slug))
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        url.searchParams.set('focus', slug)
+        window.history.replaceState(null, '', url.toString())
       }
-
-      if (engineRef.current) {
-        setMode('grid')
-        window.setTimeout(() => engineRef.current?.select(index), MODE_SWAP_DELAY_MS)
-        return
-      }
-
-      // Landed straight in CARDS (a persisted preference), so the engine has
-      // not booted yet. Hand the selection to the boot sequence, which opens it
-      // once the cluster is ready.
-      pendingFocus.current = slug
-      setMode('grid')
     },
-    [capable, openIndex],
+    [],
   )
+
+  const closeExpanded = useCallback(() => {
+    setExpandedSlug(null)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('focus')
+      window.history.replaceState(null, '', url.toString())
+    }
+  }, [])
 
   const closePopup = useCallback(() => {
     if (engineRef.current) engineRef.current.deselect()
@@ -235,22 +238,22 @@ export const SectionView = ({
 
   // Standalone popup (no chamber) still answers to Escape.
   useEffect(() => {
-    if (capable) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closePopup()
+      if (event.key !== 'Escape') return
+      if (expandedSlug) closeExpanded()
+      else if (!capable) closePopup()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [capable, closePopup])
+  }, [capable, closePopup, expandedSlug, closeExpanded])
 
-  // With no chamber to fly to, a ?focus= slug opens the standalone popup.
+  // With no chamber to fly to, a ?focus= slug expands that record inline.
   useEffect(() => {
     if (support !== 'flat') return
     const slug = pendingFocus.current
     if (!slug) return
     pendingFocus.current = null
-    const index = items.findIndex((item) => item.slug === slug)
-    if (index >= 0) setSelected({ item: items[index], index })
+    if (items.some((item) => item.slug === slug)) setExpandedSlug(slug)
   }, [support, items])
 
   const showCards = mode === 'cards'
@@ -314,8 +317,10 @@ export const SectionView = ({
         </div>
         <Mosaic
           items={items}
-          selectedSlug={selected?.item.slug ?? null}
+          collection={section.collection}
+          expandedSlug={expandedSlug}
           onSelect={onMosaicSelect}
+          onClose={closeExpanded}
           emptyMessage={`NO ${section.label} LOGGED YET.`}
         />
         <div className={styles.cardsFoot}>
@@ -329,6 +334,7 @@ export const SectionView = ({
         collection={section.collection}
         singular={section.singular}
         anchored={capable && !showCards}
+        compact
         onClose={closePopup}
         containerRef={popupRef}
       />

@@ -29,8 +29,14 @@ export interface SurveyItem {
   mosaicSpan: MosaicSpan
   featured: boolean
   featuredOrder: number | null
-  /** Wireframe motif key for the homepage strip's visual band. */
+  /** Wireframe motif key — the fallback when there is no screenshot. */
   artwork: string
+  /** Real screenshot of the running project, when one exists. */
+  image: SurveyImage | null
+  /** Your part in it, when it needs saying. */
+  role: string | null
+  repoUrl: string | null
+  liveUrl: string | null
   links: SurveyLink[]
   /** True when there is rich text worth fetching for the popup. */
   hasDetail: boolean
@@ -39,6 +45,14 @@ export interface SurveyItem {
 export interface SurveyLink {
   label: string
   url: string
+}
+
+/** An optional real screenshot. Absent means the wireframe artwork is used. */
+export interface SurveyImage {
+  url: string
+  width: number
+  height: number
+  alt: string
 }
 
 /**

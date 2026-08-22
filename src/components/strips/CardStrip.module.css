@@ -15,7 +15,12 @@
   gap: 24px;
   margin-top: 44px;
   perspective: 1400px;
-  align-items: stretch;
+  /*
+   * Cards size themselves. Stretching the lead to match the stack made it
+   * square once the stack chips and links were added, which crops a wide
+   * screenshot badly.
+   */
+  align-items: start;
 }
 
 /* Three items: the Kage proportion — a wide lead beside a narrow stack. */
@@ -69,7 +74,10 @@
 }
 
 .lead .media {
-  min-height: 380px;
+  /* Close to the reference's lead proportion, and a kind crop for a
+     1440x900 or 16:9 screenshot. */
+  aspect-ratio: 16 / 10;
+  flex: none;
 }
 
 .sideCard .media {
@@ -80,6 +88,39 @@
 .card:has(.trigger:focus-visible) .media {
   border-color: rgba(63, 198, 255, 0.55);
   box-shadow: var(--shadow-lift), 0 0 0 1px rgba(63, 198, 255, 0.35);
+}
+
+.shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transform: translateZ(20px);
+  transition: transform var(--dur) var(--ease);
+}
+
+.card:hover .shot,
+.card:has(.trigger:focus-visible) .shot {
+  transform: translateZ(30px) scale(1.03);
+}
+
+/* Screenshots are mostly dark UI, so the title needs a dark scrim instead. */
+.hasShot .scrim {
+  background: linear-gradient(to top, rgba(6, 12, 20, 0.92) 8%, rgba(6, 12, 20, 0) 100%);
+}
+
+.hasShot .title {
+  color: #fff;
+}
+
+.hasShot .subtag {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hasShot .arrow {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .art {
@@ -230,10 +271,63 @@
   color: var(--graphite);
 }
 
+/* Full stack, in the order the editor wrote it — never truncated here. */
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 3px 7px;
+  color: var(--graphite);
+  white-space: nowrap;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  position: relative;
+  /* Above the stretched trigger so these are separately clickable. */
+  z-index: 4;
+}
+
+.linkBtn {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  padding: 6px 11px;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+
+.linkBtn:hover,
+.linkBtn:focus-visible {
+  border-color: var(--holo);
+  color: var(--ink);
+  background: rgba(63, 198, 255, 0.1);
+}
+
 .sideCard .summary {
   display: -webkit-box;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

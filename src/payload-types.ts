@@ -160,7 +160,7 @@ export interface Project {
    */
   subtag?: string | null;
   /**
-   * Short uppercase keywords, e.g. RUST, CRYPTO, X3DH.
+   * The full stack, in the order you want it read. Shown complete on the homepage card and in the expanded mosaic cell.
    */
   tags?: string[] | null;
   /**
@@ -182,6 +182,18 @@ export interface Project {
     [k: string]: unknown;
   } | null;
   /**
+   * Drives the GITHUB button.
+   */
+  repoUrl?: string | null;
+  /**
+   * Drives the LIVE button.
+   */
+  liveUrl?: string | null;
+  /**
+   * Your part in it, when it needs saying — e.g. Security engineer, IT manager.
+   */
+  role?: string | null;
+  /**
    * Buttons rendered inside the popup card.
    */
   links?:
@@ -194,7 +206,10 @@ export interface Project {
         id?: string | null;
       }[]
     | null;
-  cover?: (number | null) | Media;
+  /**
+   * Optional. A real screenshot of the running project — shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.
+   */
+  screenshot?: (number | null) | Media;
   /**
    * Wireframe motif drawn in the homepage strip cell.
    */
@@ -813,6 +828,9 @@ export interface ProjectsSelect<T extends boolean = true> {
   subtag?: T;
   tags?: T;
   description?: T;
+  repoUrl?: T;
+  liveUrl?: T;
+  role?: T;
   links?:
     | T
     | {
@@ -820,7 +838,7 @@ export interface ProjectsSelect<T extends boolean = true> {
         url?: T;
         id?: T;
       };
-  cover?: T;
+  screenshot?: T;
   stripArtwork?: T;
   weight?: T;
   mosaicSpan?: T;

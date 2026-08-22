@@ -66,18 +66,56 @@ const run = async () => {
       await page.locator('button:has-text("Cards")').evaluate((el) => el.getAttribute('aria-pressed') === 'true'),
     )
 
-    /* --------------------------------- mosaic click → grid + popup ---- */
-    const firstTitle = await page.locator('article h3 button').first().textContent()
+    /* ------------------------------ mosaic click → inline expansion ---- */
+    const cellsBefore = await page.locator('article').count()
+    const firstTitle = (await page.locator('article h3 button').first().textContent())?.trim()
     await page.locator('article h3 button').first().click()
-    await page.waitForTimeout(1400)
-    const afterClick = await popupState(page)
-    check('mosaic click switches to GRID', (await page.locator('button:has-text("Grid")').getAttribute('aria-pressed')) === 'true')
-    check('mosaic click opens the popup', afterClick.open, JSON.stringify(afterClick))
-    check('popup shows the clicked record', afterClick.title === firstTitle, `${afterClick.title} vs ${firstTitle}`)
+    await page.waitForTimeout(1600)
 
+    const openState = await page.evaluate(() => {
+      const panel = document.querySelector('article[aria-labelledby^="expanded-"]')
+      if (!panel) return null
+      const grid = panel.parentElement
+      const box = panel.getBoundingClientRect()
+      const gridBox = grid.getBoundingClientRect()
+      return {
+        title: panel.querySelector('h3')?.textContent?.trim() ?? '',
+        first: grid.firstElementChild === panel,
+        fullWidth: Math.abs(box.width - gridBox.width) <= 2,
+        hasImage: Boolean(panel.querySelector('img')),
+        chips: panel.querySelectorAll('span').length,
+        links: [...panel.querySelectorAll('a')].map((a) => a.textContent.trim()),
+        prose: (panel.textContent ?? '').length,
+        cells: grid.querySelectorAll('article').length,
+      }
+    })
+
+    check('clicking a cell expands it inline', openState !== null)
+    check('expanded record is the one clicked', openState?.title.startsWith(firstTitle ?? ''), `${openState?.title} vs ${firstTitle}`)
+    check('expanded cell is promoted to the head of the block', openState?.first === true)
+    check('expanded cell spans the full block width', openState?.fullWidth === true)
+    check('expanded cell shows the screenshot', openState?.hasImage === true)
+    check('expanded cell carries a GitHub link', openState?.links.some((l) => /github/i.test(l)) === true, JSON.stringify(openState?.links))
+    check('expanded cell carries the long write-up', (openState?.prose ?? 0) > 600, String(openState?.prose))
+    check('the block keeps every record', openState?.cells === cellsBefore, `${openState?.cells} vs ${cellsBefore}`)
+    check('no popup opens over the mosaic', !(await popupState(page)).open)
+
+    await page.locator('button[aria-label="Close record"]').click()
+    await page.waitForTimeout(900)
+    const afterClose = await page.evaluate(() => ({
+      expanded: Boolean(document.querySelector('article[aria-labelledby^="expanded-"]')),
+      cells: document.querySelectorAll('article').length,
+    }))
+    check('close returns the block to its welded order', !afterClose.expanded && afterClose.cells === cellsBefore, JSON.stringify(afterClose))
+
+    await page.locator('article h3 button').first().click()
+    await page.waitForTimeout(1200)
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(600)
-    check('Escape closes the popup', !(await popupState(page)).open)
+    await page.waitForTimeout(700)
+    check(
+      'Escape closes the expanded record',
+      !(await page.evaluate(() => Boolean(document.querySelector('article[aria-labelledby^="expanded-"]')))),
+    )
 
     await ctx.close()
   }
@@ -87,10 +125,22 @@ const run = async () => {
     console.log('\ndeep link — ?focus=')
     const ctx = await browser.newContext({ viewport: DESKTOP })
     const page = await ctx.newPage()
-    await page.goto(`${BASE}/projects?focus=optiwealth`, { waitUntil: 'networkidle' })
+    await page.goto(`${BASE}/projects?focus=netguard-pcap-analysis`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(4000)
     const state = await popupState(page)
-    check('?focus opens the right record', state.open && state.title === 'OptiWealth', JSON.stringify(state))
+    check('?focus opens the right record', state.open && state.title === 'NetGuard', JSON.stringify(state))
+
+    const compact = await page.evaluate(() => {
+      const el = document.querySelector('[role="dialog"]')
+      return {
+        text: (el?.textContent ?? '').length,
+        links: [...(el?.querySelectorAll('a') ?? [])].map((a) => a.textContent.trim()),
+        chips: (el?.textContent ?? '').includes('PYTHON'),
+      }
+    })
+    check('chamber popup stays short', compact.text < 700, `${compact.text} chars`)
+    check('chamber popup lists the tech stack', compact.chips === true)
+    check('chamber popup carries the GitHub link', compact.links.some((l) => /github/i.test(l)), JSON.stringify(compact.links))
 
     const positioned = await page.evaluate(() => {
       const el = document.querySelector('[role="dialog"]')
@@ -147,10 +197,23 @@ const run = async () => {
     check('cards are separated by a real gap', shape.gap >= 16, `${shape.gap}px`)
     check('cards carry a radius', parseFloat(shape.radius) > 0, shape.radius)
 
-    await page.locator('a[href^="/projects?focus="]').first().click()
+    const content = await page.evaluate(() => {
+      const card = document.querySelector('#projects article')
+      return {
+        chips: card.querySelectorAll('[aria-label="Tech stack"] span').length,
+        links: [...card.querySelectorAll('a')].map((a) => a.textContent.trim()),
+        summary: (card.querySelector('p')?.textContent ?? '').length,
+        hasImage: Boolean(card.querySelector('img')),
+      }
+    })
+    check('home card lists the full tech stack', content.chips >= 5, String(content.chips))
+    check('home card carries an outbound link', content.links.some((l) => /github|live/i.test(l)), JSON.stringify(content.links))
+    check('home card shows a description', content.summary > 40, String(content.summary))
+    check('home card shows the project screenshot', content.hasImage === true)
+
+    await page.locator('#projects article h3 a').first().click()
     await page.waitForTimeout(4200)
     check('strip click lands on the section with focus', page.url().includes('/projects?focus='), page.url())
-    check('strip click opens the popup', (await popupState(page)).open)
     await ctx.close()
   }
 
@@ -198,8 +261,11 @@ const run = async () => {
     check('reduced motion: mosaic still renders', (await page.locator('article h3').count()) >= 10)
 
     await page.locator('article h3 button').first().click()
-    await page.waitForTimeout(600)
-    check('reduced motion: popup opens standalone', (await popupState(page)).open)
+    await page.waitForTimeout(900)
+    check(
+      'reduced motion: record still expands inline',
+      await page.evaluate(() => Boolean(document.querySelector('article[aria-labelledby^="expanded-"]'))),
+    )
     await reduced.close()
 
     const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } })
