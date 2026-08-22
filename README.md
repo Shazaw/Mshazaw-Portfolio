@@ -318,7 +318,11 @@ spec was asking for. They are the only places the build departs from a stated fi
    outside the frustum at any radius inside the clamp. The resting target now lifts toward the
    middle of the skyline, never below the spec's 7.
 
-3. **Popup viewport clamp** (§8.3 gives `x ∈ [220, w−220]`, `y ∈ [300, h−40]`). Those assume a
+3. **Orbit far clamp** (§8.2 caps the radius at 66). A cluster spread wide enough that its
+   towers do not visually collide has to be framed from further out than that. Raised to 100;
+   the clamp only ever bounded how far a visitor may zoom.
+
+4. **Popup viewport clamp** (§8.3 gives `x ∈ [220, w−220]`, `y ∈ [300, h−40]`). Those assume a
    ~400×300 card; a long record grows taller and the fixed floor pushed its top off-screen. The
    clamp is now driven by the card's measured box plus navbar clearance, which is what the
    fixed numbers were approximating.
@@ -329,6 +333,11 @@ reference the spec cites, that is the Sacred Craft pattern, not Still Gardens �
 is an inset lead-plus-stack of separate cards with gaps and a radius. The homepage now follows
 the reference. The mosaic keeps the connected-block rule, but sits in the page shell rather
 than running edge to edge, which is also how Sacred Craft sits on the page.
+
+Also: tower height and footprint were retuned away from the spec's `(7 + weight × 4.6)` and
+`3.4 + rnd × 2.0` — those produce narrow spires that merge into one mass at the spec's ring
+density. `npm run test:unit` now asserts no two towers overlap on the floor plan, since
+spacing and footprint are set independently and it is easy to widen one without the other.
 
 Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
 (the mosaic renders every section), and particle points carry the shared radial texture —

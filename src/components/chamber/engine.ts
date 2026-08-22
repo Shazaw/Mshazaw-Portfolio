@@ -262,7 +262,7 @@ export const createChamber = (options: ChamberOptions) => {
     // Phyllotaxis: tight, towers nearly shoulder-to-shoulder. The coefficient is
     // a touch above the spec's 2.05 because the footprints are now wider — at
     // 2.05 they interpenetrate and the cluster reads as one mass.
-    const radius = i === 0 ? 0 : 2.6 + 3.5 * Math.sqrt(i)
+    const radius = i === 0 ? 0 : 3.0 + 5.6 * Math.sqrt(i)
     group.position.set(Math.cos(i * GOLDEN_ANGLE) * radius, 0, Math.sin(i * GOLDEN_ANGLE) * radius)
 
     /*
@@ -271,9 +271,11 @@ export const createChamber = (options: ChamberOptions) => {
      * which the perspective flattens — coupling both gives the cluster a
      * silhouette you can read at a glance.
      */
-    const footprint = 2.9 + node.weight * 0.42 + random() * 0.6
-    // The falloff term guarantees the peak sits at centre.
-    const height = (7 + node.weight * 4.6) * (1 - 0.028 * i) + random() * 1.5
+    const footprint = 3.5 + node.weight * 0.5 + random() * 0.6
+    // The falloff term guarantees the peak sits at centre. Shorter than the
+    // spec's (7 + w*4.6): against the wider footprints that read as spires, and
+    // the cluster wants to sit down on the floor rather than tower over it.
+    const height = (6.2 + node.weight * 3.6) * (1 - 0.028 * i) + random() * 1.2
 
     const solidGeometry = new BoxGeometry(footprint, height, footprint)
     // Cloned so each tower can scale the pattern to its own size and keep the
@@ -312,10 +314,10 @@ export const createChamber = (options: ChamberOptions) => {
       opacity: 0.4,
       blending: AdditiveBlending,
     })
-    for (let f = 1; f < Math.floor(height / 3.4); f++) {
+    for (let f = 1; f < Math.floor(height / 2.6); f++) {
       const floor = new LineSegments(floorGeometry, floorMaterial)
       floor.rotation.x = -Math.PI / 2
-      floor.position.y = f * 3.4
+      floor.position.y = f * 2.6
       group.add(floor)
       floors.push(floor)
     }
@@ -325,7 +327,7 @@ export const createChamber = (options: ChamberOptions) => {
      * that used to sit up there looking like freight. This is the tower's
      * signal — the surface motif stays quiet underneath it.
      */
-    const shaftHeight = 11 + node.weight * 2.1
+    const shaftHeight = 9.5 + node.weight * 1.9
     const shaftMaterial = new SpriteMaterial({
       map: glowTexture,
       color: HOLO_BRIGHT,
@@ -428,8 +430,15 @@ export const createChamber = (options: ChamberOptions) => {
   const halfFov = Math.tan((camera.fov * Math.PI) / 360)
   // Headroom covers the crown and the base of the light shaft; the shaft's soft
   // tip is allowed to leave the frame rather than shrinking the whole cluster.
-  const needed = Math.max(tallest + 11 - restHeight, restHeight, widest * 0.62)
-  const framingRadius = Math.max(16, Math.min(66, (needed / halfFov) * 1.02))
+  const needed = Math.max(tallest + 6 - restHeight, restHeight)
+  /*
+   * `needed / halfFov` is the distance at which the cluster fits — but that is
+   * the distance to its CENTRE, and the towers on the near side sit `widest`
+   * closer to the camera, where they project correspondingly larger and fall
+   * out of frame. Adding the spread back puts the near face at that distance
+   * instead, which is what actually has to fit.
+   */
+  const framingRadius = Math.max(16, Math.min(100, widest + needed / halfFov))
 
   const state = {
     theta: 0.8,
@@ -450,7 +459,12 @@ export const createChamber = (options: ChamberOptions) => {
   }
 
   const clampPhi = (value: number) => Math.max(0.55, Math.min(1.42, value))
-  const clampRadius = (value: number) => Math.max(16, Math.min(66, value))
+  /*
+   * The spec caps the orbit at 66. A cluster spread wide enough that its towers
+   * do not visually collide has to be framed from further out than that, and
+   * the clamp only ever bounded how far a visitor may zoom.
+   */
+  const clampRadius = (value: number) => Math.max(16, Math.min(100, value))
 
   let dragging = false
   let pointerX = 0

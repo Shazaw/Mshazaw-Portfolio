@@ -17,8 +17,8 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "migrate:status": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:status",
-    "test": "tsx scripts/test-mosaic.ts && tsx scripts/test-podium.ts && node scripts/test-interactions.mjs",
-    "test:unit": "tsx scripts/test-mosaic.ts && tsx scripts/test-podium.ts",
+    "test": "npm run test:unit && node scripts/test-interactions.mjs",
+    "test:unit": "tsx scripts/test-mosaic.ts && tsx scripts/test-podium.ts && tsx scripts/test-cluster.ts",
     "test:e2e": "node scripts/test-interactions.mjs"
   },
   "dependencies": {
