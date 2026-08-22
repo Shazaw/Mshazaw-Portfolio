@@ -110,7 +110,18 @@ const run = async () => {
 
     const firstTitle = (await page.locator('article h3 button').first().textContent())?.trim()
     await page.locator('article h3 button').first().click()
-    await page.waitForTimeout(1600)
+    // The write-up is fetched on open, so wait for the content rather than a
+    // fixed delay — a fixed one races the request under load.
+    await page
+      .waitForFunction(
+        () => {
+          const panel = document.querySelector('article[aria-labelledby^="expanded-"]')
+          return Boolean(panel) && !/Loading record/.test(panel.textContent ?? '')
+        },
+        { timeout: 8000 },
+      )
+      .catch(() => {})
+    await page.waitForTimeout(400)
 
     const openState = await page.evaluate(() => {
       const panel = document.querySelector('article[aria-labelledby^="expanded-"]')

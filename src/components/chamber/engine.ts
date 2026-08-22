@@ -45,7 +45,7 @@ const HOLO = 0x3fc6ff
 const HOLO_HOT = 0xb6ecff
 const HOLO_BRIGHT = 0x9fe5ff
 const CORE = 0x0a1b2e
-const FLOOR_LINE = 0x1e7fae
+const FLOOR_LINE = 0x2b93c4
 
 
 const GOLDEN_ANGLE = 2.39996
@@ -111,18 +111,26 @@ export const createChamber = (options: ChamberOptions) => {
   renderer.setClearColor(0x000000, 0)
 
   const scene = new Scene()
-  scene.fog = new Fog(0x04070d, 60, 190)
+  // Tighter than the spec's 60–190: the floor is smaller now, and the far edge
+  // has to dissolve rather than end on a visible boundary.
+  scene.fog = new Fog(0x04070d, 42, 132)
 
   const camera = new PerspectiveCamera(45, 1, 0.1, 400)
 
   /* ------------------------------------------------------ atmosphere ---- */
   /* Mandatory: without these the cluster reads as a depressing empty grid. */
 
-  const gridA = new GridHelper(220, 44, 0x11577a, 0x0b3a54)
-  const gridB = new GridHelper(220, 11, 0x2596c9, 0x2596c9)
+  /*
+   * The survey floor. It was reading brighter than the cluster and running
+   * uniformly to the horizon, which flattened the whole frame — the eye had
+   * nowhere to land. Pulled in and dimmed so the fog can eat its edge, it now
+   * sits under the towers instead of competing with them.
+   */
+  const gridA = new GridHelper(150, 30, 0x11577a, 0x0b3a54)
+  const gridB = new GridHelper(150, 8, 0x2596c9, 0x2596c9)
   for (const [grid, opacity] of [
-    [gridA, 0.55],
-    [gridB, 0.4],
+    [gridA, 0.34],
+    [gridB, 0.26],
   ] as const) {
     const material = grid.material as LineBasicMaterial
     material.transparent = true
@@ -136,14 +144,14 @@ export const createChamber = (options: ChamberOptions) => {
   const poolMaterial = new MeshBasicMaterial({
     map: glowTexture,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.26,
     blending: AdditiveBlending,
     depthWrite: false,
   })
   const poolGeometry = new PlaneGeometry(1, 1)
   const pool = new Mesh(poolGeometry, poolMaterial)
   pool.rotation.x = -Math.PI / 2
-  pool.scale.set(85, 85, 1)
+  pool.scale.set(64, 64, 1)
   pool.position.y = 0.05
   scene.add(pool)
 
@@ -193,12 +201,20 @@ export const createChamber = (options: ChamberOptions) => {
     const random = mulberry32(hashSeed(node.slug || node.id))
     const group = new Group()
 
-    // Phyllotaxis: tight, towers nearly shoulder-to-shoulder.
-    const radius = i === 0 ? 0 : 2.2 + 2.05 * Math.sqrt(i)
+    // Phyllotaxis: tight, towers nearly shoulder-to-shoulder. The coefficient is
+    // a touch above the spec's 2.05 because the footprints are now wider — at
+    // 2.05 they interpenetrate and the cluster reads as one mass.
+    const radius = i === 0 ? 0 : 2.2 + 2.75 * Math.sqrt(i)
     group.position.set(Math.cos(i * GOLDEN_ANGLE) * radius, 0, Math.sin(i * GOLDEN_ANGLE) * radius)
 
-    const footprint = 3.4 + random() * 2.0
-    // Weight drives height; the falloff term guarantees the peak sits at centre.
+    /*
+     * Weight drives height (spec) and now footprint as well. With a near-fixed
+     * footprint every tower read as the same slab and the only cue was height,
+     * which the perspective flattens — coupling both gives the cluster a
+     * silhouette you can read at a glance.
+     */
+    const footprint = 2.5 + node.weight * 0.34 + random() * 0.6
+    // The falloff term guarantees the peak sits at centre.
     const height = (7 + node.weight * 4.6) * (1 - 0.028 * i) + random() * 1.5
 
     const solidGeometry = new BoxGeometry(footprint, height, footprint)
@@ -218,13 +234,19 @@ export const createChamber = (options: ChamberOptions) => {
     const edges = new LineSegments(edgeGeometry, edgeMaterial)
     edges.position.y = height / 2
 
-    // Interior floor plates — this is what makes a tower read as occupied.
+    /*
+     * Storey plates — the spec calls these "what makes towers read as lit,
+     * occupied buildings", but at 0.999x they sit INSIDE an opaque core and are
+     * occluded on every tower, which is why the cluster read as blank slabs.
+     * Drawn slightly proud of the faces instead, they ring each tower as a
+     * floor slab and become the cluster's only real texture.
+     */
     const floors: LineSegments[] = []
-    const floorGeometry = new EdgesGeometry(new PlaneGeometry(footprint * 0.999, footprint * 0.999))
+    const floorGeometry = new EdgesGeometry(new PlaneGeometry(footprint * 1.035, footprint * 1.035))
     const floorMaterial = new LineBasicMaterial({
       color: FLOOR_LINE,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.62,
       blending: AdditiveBlending,
     })
     for (let f = 1; f < Math.floor(height / 3.4); f++) {
@@ -235,7 +257,7 @@ export const createChamber = (options: ChamberOptions) => {
       floors.push(floor)
     }
 
-    const capGeometry = new EdgesGeometry(new BoxGeometry(footprint * 0.55, 0.8, footprint * 0.55))
+    const capGeometry = new EdgesGeometry(new BoxGeometry(footprint * 0.4, 0.5, footprint * 0.4))
     const capMaterial = new LineBasicMaterial({
       color: HOLO_HOT,
       transparent: true,
@@ -243,7 +265,7 @@ export const createChamber = (options: ChamberOptions) => {
       blending: AdditiveBlending,
     })
     const cap = new LineSegments(capGeometry, capMaterial)
-    cap.position.y = height + 0.5
+    cap.position.y = height + 0.3
 
     const glowMaterial = new SpriteMaterial({
       map: glowTexture,
@@ -254,7 +276,7 @@ export const createChamber = (options: ChamberOptions) => {
       depthWrite: false,
     })
     const glow = new Sprite(glowMaterial)
-    glow.scale.set(footprint * 4.2, height * 1.5, 1)
+    glow.scale.set(footprint * 3.1, height * 1.35, 1)
     glow.position.y = height * 0.55
 
     const beaconMaterial = new SpriteMaterial({
@@ -266,10 +288,28 @@ export const createChamber = (options: ChamberOptions) => {
       depthWrite: false,
     })
     const beaconGlow = new Sprite(beaconMaterial)
-    beaconGlow.scale.set(3.2, 3.2, 1)
-    beaconGlow.position.y = height + 0.6
+    beaconGlow.scale.set(2.4, 2.4, 1)
+    beaconGlow.position.y = height + 0.4
 
-    group.add(solid, edges, cap, glow, beaconGlow)
+    /*
+     * Contact pool. Without it the towers read as floating in front of a grid
+     * rather than standing on it — this is the cheapest possible ground shadow,
+     * inverted: light spilling onto the floor instead of shadow.
+     */
+    const contactMaterial = new SpriteMaterial({
+      map: glowTexture,
+      color: HOLO,
+      transparent: true,
+      opacity: 0.15,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    })
+    const contact = new Sprite(contactMaterial)
+    contact.scale.set(footprint * 2.6, footprint * 2.6, 1)
+    contact.position.y = 0.15
+    contact.material.rotation = 0
+
+    group.add(solid, edges, cap, glow, beaconGlow, contact)
     group.scale.y = reducedMotion ? 1 : 0.001
     scene.add(group)
 
@@ -289,6 +329,7 @@ export const createChamber = (options: ChamberOptions) => {
       capMaterial,
       glowMaterial,
       beaconMaterial,
+      contactMaterial,
     )
   })
 
