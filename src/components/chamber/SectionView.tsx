@@ -36,6 +36,7 @@ export const SectionView = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const chipRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ChamberHandle | null>(null)
   const bootedRef = useRef(false)
   // `?focus=<slug>` is read on the client so section pages stay fully static.
@@ -56,6 +57,8 @@ export const SectionView = ({
   const [selected, setSelected] = useState<PopupTarget | null>(null)
   // CARDS mode opens a record inline instead of over the block.
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null)
+  // The record panel only fits above this width; below it the chamber recentres.
+  const [wideEnough, setWideEnough] = useState(false)
   const [chip, setChip] = useState<string>('')
 
   const storageKey = `holo:mode:${section.key}`
@@ -82,6 +85,14 @@ export const SectionView = ({
     }
     setMode(stored === 'cards' ? 'cards' : 'grid')
   }, [reducedMotion, storageKey])
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1181px)')
+    const update = () => setWideEnough(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     if (!capable) return
@@ -205,6 +216,20 @@ export const SectionView = ({
     else setExpandedSlug(null)
   }, [mode])
 
+  // Push the cluster clear of the record panel, and tell the popup where the
+  // panel's right edge is so it never lands underneath it.
+  useEffect(() => {
+    const engine = engineRef.current
+    if (!engine) return
+    if (mode === 'cards' || !wideEnough) {
+      engine.setComposition(0, 0)
+      return
+    }
+    const panel = panelRef.current
+    const inset = panel ? panel.getBoundingClientRect().right + 28 : 0
+    engine.setComposition(0.13, inset)
+  }, [mode, wideEnough, loading])
+
   /**
    * CARDS opens the record inline: the block re-orders around it and the full
    * write-up, stack and links come with it. The chamber's anchored popup stays
@@ -221,6 +246,14 @@ export const SectionView = ({
     },
     [],
   )
+
+  const selectFromPanel = useCallback((index: number) => {
+    engineRef.current?.select(index)
+  }, [])
+
+  const highlightFromPanel = useCallback((index: number | null) => {
+    engineRef.current?.highlight(index)
+  }, [])
 
   const closeExpanded = useCallback(() => {
     setExpandedSlug(null)
@@ -257,6 +290,7 @@ export const SectionView = ({
   }, [support, items])
 
   const showCards = mode === 'cards'
+  const showPanel = capable && !showCards && wideEnough
   const overflow = Math.max(0, nodes.length - MAX_TOWERS)
 
   return (
@@ -284,9 +318,15 @@ export const SectionView = ({
         </div>
       ) : null}
 
-      <SurveyLabel onDark className={[styles.ui, styles.survey].join(' ')}>
-        {surveyLabel}
-      </SurveyLabel>
+      {!showPanel ? (
+        <SurveyLabel onDark className={[styles.ui, styles.survey].join(' ')}>
+          {surveyLabel}
+        </SurveyLabel>
+      ) : (
+        <SurveyLabel onDark className={[styles.ui, styles.survey].join(' ')}>
+          Upd {surveyLabel.split('UPD ')[1] ?? ''}
+        </SurveyLabel>
+      )}
 
       {capable && !showCards ? (
         <div className={[styles.ui, styles.hint].join(' ')}>Drag to orbit · Scroll to zoom · Click a block</div>
@@ -296,9 +336,43 @@ export const SectionView = ({
         {chip}
       </div>
 
-      {/* Screen readers and crawlers get the full list regardless of mode. */}
       <h1 className="srOnly">{section.label}</h1>
-      {!showCards ? (
+
+      {showPanel ? (
+        <div className={styles.panel} ref={panelRef}>
+          <div className={styles.panelHead}>
+            <Eyebrow onDark>
+              {section.num} · {section.label} · N={items.length}
+            </Eyebrow>
+            <p className={styles.panelTitle}>{section.heading}</p>
+            <p className={styles.panelBlurb}>{section.blurb}</p>
+            <div className={styles.panelRule} />
+          </div>
+          <ul className={styles.records}>
+            {items.map((item, index) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={styles.record}
+                  data-active={selected?.item.slug === item.slug ? 'true' : undefined}
+                  onClick={() => selectFromPanel(index)}
+                  onMouseEnter={() => highlightFromPanel(index)}
+                  onMouseLeave={() => highlightFromPanel(null)}
+                  onFocus={() => highlightFromPanel(index)}
+                  onBlur={() => highlightFromPanel(null)}
+                >
+                  <span className={styles.recordNum}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className={styles.recordTitle}>{item.title}</span>
+                  <span className={styles.recordWeight}>W{item.weight}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {/* Crawlers and screen readers still get the list when the panel is not shown. */}
+      {!showCards && !showPanel ? (
         <ul className="srOnly">
           {items.map((item) => (
             <li key={item.id}>

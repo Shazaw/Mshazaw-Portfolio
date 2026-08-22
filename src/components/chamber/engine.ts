@@ -505,11 +505,26 @@ export const createChamber = (options: ChamberOptions) => {
     activePointers.clear()
   }
 
+  /*
+   * Composition offset. The record panel occupies the left of the frame, so the
+   * cluster is pushed right by shifting the frustum rather than moving the
+   * scene — the orbit maths stays centred on the cluster, and `project()` still
+   * returns correct screen positions for the chip and popup because it reads
+   * the same offset projection matrix.
+   */
+  let viewShift = 0
+  let leftInset = 0
+
   const resize = () => {
     const width = canvas.clientWidth || window.innerWidth
     const height = canvas.clientHeight || window.innerHeight
     renderer.setSize(width, height, false)
     camera.aspect = width / Math.max(height, 1)
+    if (viewShift !== 0) {
+      camera.setViewOffset(width, height, -viewShift * width, 0, width, height)
+    } else {
+      camera.clearViewOffset()
+    }
     camera.updateProjectionMatrix()
   }
 
@@ -599,8 +614,9 @@ export const createChamber = (options: ChamberOptions) => {
       // clamp has to be driven by its measured box rather than a fixed 220/300 —
       // a long record grows taller than the spec's reference card.
       const halfWidth = popupEl.offsetWidth / 2 + 20
+      const minX = leftInset + halfWidth
       const cardHeight = popupEl.offsetHeight + 24
-      const x = Math.max(halfWidth, Math.min(width - halfWidth, (projected.x * 0.5 + 0.5) * width))
+      const x = Math.max(minX, Math.min(width - halfWidth, (projected.x * 0.5 + 0.5) * width))
       // Floor keeps the card clear of the fixed navbar as well as the top edge.
       const floor = Math.min(cardHeight + NAV_CLEARANCE, height - 40)
       const y = Math.max(floor, Math.min(height - 40, (-projected.y * 0.5 + 0.5) * height))
@@ -632,6 +648,17 @@ export const createChamber = (options: ChamberOptions) => {
     },
     /** Frame the cluster on one tower without opening its popup. */
     focusIndex: (index: number) => select(index),
+    /** Highlight a tower from outside the canvas — used by the record panel. */
+    highlight: (index: number | null) => setHovered(index),
+    /**
+     * `shift` moves the cluster right as a fraction of the viewport width;
+     * `inset` is the panel's right edge, which the popup must clear.
+     */
+    setComposition: (shift: number, inset: number) => {
+      viewShift = shift
+      leftInset = inset
+      resize()
+    },
     towerCount: towers.length,
     overflow: Math.max(0, nodes.length - towers.length),
     dispose: () => {

@@ -190,6 +190,55 @@ const run = async () => {
     await ctx.close()
   }
 
+  /* ----------------------------------------------------- record panel ---- */
+  {
+    console.log('\nchamber record panel')
+    const ctx = await browser.newContext({ viewport: { width: 1600, height: 980 } })
+    const page = await ctx.newPage()
+    await page.goto(`${BASE}/projects`, { waitUntil: 'networkidle' })
+    await page.waitForTimeout(4200)
+
+    const rows = await page.locator('button[class*=record]').count()
+    check('panel lists every record', rows === 14, String(rows))
+    check('panel carries the section heading', await page.locator('text=Selected work').isVisible())
+
+    const title = (await page.locator('button[class*=record]').nth(3).locator('span').nth(1).textContent())?.trim()
+    await page.locator('button[class*=record]').nth(3).click()
+    await page.waitForTimeout(2200)
+
+    const state = await page.evaluate(() => {
+      const el = document.querySelector('[role="dialog"]')
+      const panel = document.querySelector('[class*="panel"]')
+      const box = el?.getBoundingClientRect()
+      return {
+        open: Boolean(el?.className.includes('open')),
+        title: el?.querySelector('h3')?.textContent ?? '',
+        popupLeft: box ? box.left : -1,
+        panelRight: panel ? panel.getBoundingClientRect().right : -1,
+        activeRows: document.querySelectorAll('button[data-active="true"]').length,
+      }
+    })
+    check('selecting a record opens its tower', state.open && state.title === title, JSON.stringify(state))
+    check('the popup clears the record panel', state.popupLeft > state.panelRight, `${Math.round(state.popupLeft)} vs ${Math.round(state.panelRight)}`)
+    check('the chosen row is marked active', state.activeRows === 1, String(state.activeRows))
+    await ctx.close()
+
+    // Below the breakpoint the chamber recentres and the hidden list returns.
+    const narrow = await browser.newContext({ viewport: { width: 1100, height: 900 } })
+    const npage = await narrow.newPage()
+    await npage.goto(`${BASE}/projects`, { waitUntil: 'networkidle' })
+    await npage.waitForTimeout(3600)
+    const narrowState = await npage.evaluate(() => ({
+      panelVisible: Boolean(
+        [...document.querySelectorAll('[class*="panel"]')].find((el) => el.getBoundingClientRect().width > 0),
+      ),
+      srList: document.querySelectorAll('ul.srOnly li').length,
+    }))
+    check('panel hides on a narrow viewport', narrowState.panelVisible === false)
+    check('the accessible list returns when the panel is gone', narrowState.srList === 14, String(narrowState.srList))
+    await narrow.close()
+  }
+
   /* ------------------------------------------------------ deep linking ---- */
   {
     console.log('\ndeep link — ?focus=')

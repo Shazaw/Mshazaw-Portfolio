@@ -105,6 +105,22 @@ socials, CV link, and SEO defaults.
 
 ---
 
+## The chamber frame
+
+The cluster is pushed into the right of the frame by a frustum offset
+(`camera.setViewOffset`) rather than by moving the scene — the orbit maths stays
+centred on the cluster and `project()` still returns correct screen positions, so the
+hover chip and the popup keep tracking.
+
+The space that leaves is the **record panel**: section heading, blurb, and every record
+with its weight. It is functional, not decoration — hovering a row lights its tower,
+clicking one flies the camera to it and opens its card, and the popup clamps to the right
+of the panel so the two never overlap. It doubles as the scene's accessible list, which is
+why the canvas can stay `aria-hidden`.
+
+Below 1180px the panel would crowd the cluster, so it hides, the chamber recentres, and
+the visually-hidden list takes over again.
+
 ## The two detail surfaces
 
 The same record answers a different question depending on where you open it, so it is
@@ -201,9 +217,9 @@ Current measurements (transferred, compressed):
 
 | Route | Route JS | 3D chunk | Page total |
 |---|---|---|---|
-| `/` | 173 KB | 131 KB | 440 KB |
-| `/about` | 172 KB | — | 282 KB |
-| `/projects` | 170 KB | 131 KB | 412 KB |
+| `/` | 174 KB | 131 KB | 441 KB |
+| `/about` | 173 KB | — | 283 KB |
+| `/projects` | 171 KB | 131 KB | 413 KB |
 
 Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
 
