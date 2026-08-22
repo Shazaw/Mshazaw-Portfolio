@@ -270,8 +270,11 @@ outside beneath it. Hover tilts the media only, so the small type below stays cr
 plus an inner glow — so shared hairlines never double. Adding a `gap`, a `border-radius`, or a
 per-cell `transform: translate` here is wrong.
 
-Opening a record in the mosaic promotes it to the head of the block at full width and re-flows
-the rest beneath it — the slab stays welded, it just re-orders around whatever is open.
+Opening a record in the mosaic expands it **where it sits**: the cells before it and the cells
+after it are laid out as two independent runs, so each run still closes every row to exactly
+six columns and the slab stays welded. The whole cell is the hit target — the trigger lives in
+the heading and stretches over the slab, which means nothing between it and `.cell` may be
+positioned or the hit area collapses back to that element's box.
 
 **Both blocks sit in the page shell** — inset ~3.3% from each viewport edge, matching the
 reference, and capped at 1760px so an ultrawide doesn't stretch a six-column mosaic. Nav,

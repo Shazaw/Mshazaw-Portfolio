@@ -72,11 +72,17 @@
   outline: none;
 }
 
+/*
+ * Stretches over the whole cell, so the entire slab is the hit target rather
+ * than just the words in the heading. `.cell` is the nearest positioned
+ * ancestor — nothing between here and it may be positioned, or this shrinks
+ * back to that element's box.
+ */
 .trigger::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
 }
 
 .cell::after {
@@ -114,8 +120,6 @@
 }
 
 .title {
-  position: relative;
-  z-index: 2;
   font-family: var(--font-display);
   font-size: clamp(20px, 1.8vw, 27px);
   font-weight: 600;
@@ -136,7 +140,6 @@
 }
 
 .desc {
-  position: relative;
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--on-dark-muted);

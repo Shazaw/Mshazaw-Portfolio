@@ -29,9 +29,14 @@ export const ExpandedCell = ({
   const art = item.image ? null : buildArtwork(item.artwork)
 
   // Move focus into the panel so a keyboard user lands where the content went.
+  // The record opens where it sits, so only scroll when it opened out of view.
   useEffect(() => {
     closeRef.current?.focus({ preventScroll: true })
-    ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const node = ref.current
+    if (!node) return
+    const box = node.getBoundingClientRect()
+    const offscreen = box.top < 80 || box.bottom > window.innerHeight
+    if (offscreen) node.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [item.slug])
 
   const meta = [item.periodLabel ?? String(item.year), item.role ?? item.kicker, `Weight ${item.weight}/5`]

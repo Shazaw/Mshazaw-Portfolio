@@ -11,9 +11,10 @@ import styles from './Mosaic.module.css'
  * The universal 2D surface: the CARDS view inside a chamber, and the only view
  * for mobile / reduced-motion / no-WebGL / loader-timeout visitors.
  *
- * Opening a record promotes it to the head of the block at full width; the
- * remaining cells re-flow beneath it, so the slab stays welded and simply
- * re-orders around whatever is open.
+ * Opening a record expands it **where it sits**. The cells before it and the
+ * cells after it are laid out as two independent runs, so each run still closes
+ * every row to exactly six columns and the slab stays welded — the open record
+ * simply claims a full-width row of its own at its own position.
  *
  * The cell is an <article> with a real heading rather than a <button> wrapping
  * one — a heading inside a button is invalid and its role is dropped, which
@@ -36,14 +37,27 @@ export const Mosaic = ({
   emptyMessage?: string
 }) => {
   const expandedIndex = expandedSlug ? items.findIndex((item) => item.slug === expandedSlug) : -1
-  const expanded = expandedIndex >= 0 ? items[expandedIndex] : null
 
-  // The rest keep their relative order; only the open record leaves the flow.
-  const rest = useMemo(
-    () => (expanded ? items.filter((item) => item.slug !== expanded.slug) : items),
-    [items, expanded],
+  const runs = useMemo(() => {
+    if (expandedIndex < 0) {
+      return { before: items, expanded: null as SurveyItem | null, after: [] as SurveyItem[] }
+    }
+    return {
+      before: items.slice(0, expandedIndex),
+      expanded: items[expandedIndex],
+      after: items.slice(expandedIndex + 1),
+    }
+  }, [items, expandedIndex])
+
+  // Each run closes its own rows, so no run can leave a ragged edge.
+  const layoutBefore = useMemo(
+    () => buildMosaicLayout(runs.before.map((item) => item.mosaicSpan)),
+    [runs.before],
   )
-  const layout = useMemo(() => buildMosaicLayout(rest.map((item) => item.mosaicSpan)), [rest])
+  const layoutAfter = useMemo(
+    () => buildMosaicLayout(runs.after.map((item) => item.mosaicSpan)),
+    [runs.after],
+  )
 
   if (items.length === 0) {
     return (
@@ -53,59 +67,58 @@ export const Mosaic = ({
     )
   }
 
+  const renderCell = (item: SurveyItem, placement: { span: number; tall: boolean } | undefined) => {
+    // The visible number stays tied to the record, not to its position in a run.
+    const ordinal = items.indexOf(item)
+    const span = placement?.span ?? 6
+    const tall = placement?.tall ?? true
+
+    return (
+      <article
+        key={item.id}
+        className={styles.cell}
+        style={{ gridColumn: `span ${span}`, minHeight: tall ? ROW_HEIGHT_TALL : ROW_HEIGHT_MID }}
+      >
+        <span className={styles.ghost} aria-hidden="true">
+          {pad2(ordinal + 1)}
+        </span>
+        <h3 className={styles.title}>
+          <button type="button" className={styles.trigger} onClick={() => onSelect(item.slug, ordinal)}>
+            {item.title}
+          </button>
+          {item.subtag ? <em className={styles.subtag}>{item.subtag}</em> : null}
+        </h3>
+        <p className={styles.desc}>{item.summary}</p>
+        <p className={styles.meta}>
+          <span>{item.year}</span>
+          <span aria-hidden="true">·</span>
+          <span className={styles.metaAccent}>W {item.weight}/5</span>
+          {item.periodLabel ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{item.periodLabel}</span>
+            </>
+          ) : null}
+        </p>
+      </article>
+    )
+  }
+
   return (
     <div className={styles.mosaic}>
-      {expanded ? (
+      {runs.before.map((item, index) => renderCell(item, layoutBefore[index]))}
+
+      {runs.expanded ? (
         <ExpandedCell
-          key={`expanded-${expanded.slug}`}
-          item={expanded}
+          key={`expanded-${runs.expanded.slug}`}
+          item={runs.expanded}
           index={expandedIndex}
           collection={collection}
           onClose={onClose}
         />
       ) : null}
 
-      {rest.map((item, index) => {
-        const placement = layout[index] ?? { span: 6, row: 0, tall: true }
-        // Keep the visible number tied to the record, not its shuffled position.
-        const ordinal = items.findIndex((candidate) => candidate.slug === item.slug)
-        return (
-          <article
-            key={item.id}
-            className={styles.cell}
-            style={{
-              gridColumn: `span ${placement.span}`,
-              minHeight: placement.tall ? ROW_HEIGHT_TALL : ROW_HEIGHT_MID,
-            }}
-          >
-            <span className={styles.ghost} aria-hidden="true">
-              {pad2(ordinal + 1)}
-            </span>
-            <h3 className={styles.title}>
-              <button
-                type="button"
-                className={styles.trigger}
-                onClick={() => onSelect(item.slug, ordinal)}
-              >
-                {item.title}
-              </button>
-              {item.subtag ? <em className={styles.subtag}>{item.subtag}</em> : null}
-            </h3>
-            <p className={styles.desc}>{item.summary}</p>
-            <p className={styles.meta}>
-              <span>{item.year}</span>
-              <span aria-hidden="true">·</span>
-              <span className={styles.metaAccent}>W {item.weight}/5</span>
-              {item.periodLabel ? (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>{item.periodLabel}</span>
-                </>
-              ) : null}
-            </p>
-          </article>
-        )
-      })}
+      {runs.after.map((item, index) => renderCell(item, layoutAfter[index]))}
     </div>
   )
 }

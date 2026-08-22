@@ -66,8 +66,48 @@ const run = async () => {
       await page.locator('button:has-text("Cards")').evaluate((el) => el.getAttribute('aria-pressed') === 'true'),
     )
 
+    /* --------------------------------------------- toggle round trip ---- */
+    // The CARDS layer used to cover the mode toggle, so GRID was unreachable.
+    await page.click('button:has-text("Grid")')
+    await page.waitForTimeout(900)
+    check(
+      'toggle goes back to GRID',
+      (await page.locator('button:has-text("Grid")').getAttribute('aria-pressed')) === 'true',
+    )
+    const topAtToggle = await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('button')].find((b) => /cards/i.test(b.textContent))
+      const box = btn.getBoundingClientRect()
+      const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      return top === btn || btn.contains(top)
+    })
+    check('mode toggle is never covered by another layer', topAtToggle === true)
+
+    await page.click('button:has-text("Cards")')
+    await page.waitForTimeout(900)
+    check(
+      'toggle returns to CARDS',
+      (await page.locator('button:has-text("Cards")').getAttribute('aria-pressed')) === 'true',
+    )
+
     /* ------------------------------ mosaic click → inline expansion ---- */
     const cellsBefore = await page.locator('article').count()
+
+    // The whole slab must be the hit target, not just the words in the heading.
+    const hitTargets = await page.evaluate(() => {
+      const cell = document.querySelectorAll('article')[1]
+      const b = cell.getBoundingClientRect()
+      const points = [
+        [b.left + b.width / 2, b.top + b.height / 2],
+        [b.right - 30, b.top + 40],
+        [b.left + 40, b.bottom - 20],
+      ]
+      return points.map(([x, y]) => {
+        const el = document.elementFromPoint(x, y)
+        return Boolean(el && (el.tagName === 'BUTTON' || el.closest('button')))
+      })
+    })
+    check('the whole cell is clickable, not just the title', hitTargets.every(Boolean), JSON.stringify(hitTargets))
+
     const firstTitle = (await page.locator('article h3 button').first().textContent())?.trim()
     await page.locator('article h3 button').first().click()
     await page.waitForTimeout(1600)
@@ -80,7 +120,7 @@ const run = async () => {
       const gridBox = grid.getBoundingClientRect()
       return {
         title: panel.querySelector('h3')?.textContent?.trim() ?? '',
-        first: grid.firstElementChild === panel,
+        position: [...grid.children].indexOf(panel),
         fullWidth: Math.abs(box.width - gridBox.width) <= 2,
         hasImage: Boolean(panel.querySelector('img')),
         chips: panel.querySelectorAll('span').length,
@@ -92,7 +132,7 @@ const run = async () => {
 
     check('clicking a cell expands it inline', openState !== null)
     check('expanded record is the one clicked', openState?.title.startsWith(firstTitle ?? ''), `${openState?.title} vs ${firstTitle}`)
-    check('expanded cell is promoted to the head of the block', openState?.first === true)
+    check('expanded cell opens at the clicked position', openState?.position === 0, String(openState?.position))
     check('expanded cell spans the full block width', openState?.fullWidth === true)
     check('expanded cell shows the screenshot', openState?.hasImage === true)
     check('expanded cell carries a GitHub link', openState?.links.some((l) => /github/i.test(l)) === true, JSON.stringify(openState?.links))
@@ -108,8 +148,27 @@ const run = async () => {
     }))
     check('close returns the block to its welded order', !afterClose.expanded && afterClose.cells === cellsBefore, JSON.stringify(afterClose))
 
-    await page.locator('article h3 button').first().click()
-    await page.waitForTimeout(1200)
+    // A record further down must expand where it sits rather than jump to the top.
+    await page.locator('article h3 button').nth(4).click()
+    await page.waitForTimeout(1600)
+    const deep = await page.evaluate(() => {
+      const grid = document.querySelector('article').parentElement
+      const panel = grid.querySelector('article[aria-labelledby^="expanded-"]')
+      const rows = new Map()
+      for (const child of grid.children) {
+        const box = child.getBoundingClientRect()
+        const span = Math.round((box.width / grid.getBoundingClientRect().width) * 6)
+        const top = Math.round(box.top)
+        rows.set(top, (rows.get(top) ?? 0) + span)
+      }
+      return {
+        position: [...grid.children].indexOf(panel),
+        rowsSealed: [...rows.values()].every((v) => v === 6),
+      }
+    })
+    check('a deeper record expands in place, not at the top', deep.position === 4, String(deep.position))
+    check('every row still sums to 6 around the expansion', deep.rowsSealed === true)
+
     await page.keyboard.press('Escape')
     await page.waitForTimeout(700)
     check(

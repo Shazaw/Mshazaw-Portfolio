@@ -271,6 +271,8 @@ export const SectionView = ({
         <div className={styles.staticBackdrop} aria-hidden="true" />
       )}
 
+      {showCards ? <div className={styles.topScrim} aria-hidden="true" /> : null}
+
       {capable ? (
         <div className={[styles.ui, styles.toggle].join(' ')} role="group" aria-label="View mode">
           <button type="button" aria-pressed={mode === 'grid'} onClick={() => setMode('grid')}>

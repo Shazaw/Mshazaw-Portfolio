@@ -31,9 +31,11 @@
   background: var(--chamber-gradient);
 }
 
+/* Above the CARDS layer — otherwise the mosaic covers the mode toggle and the
+   switch only works one way. */
 .ui {
   position: absolute;
-  z-index: 5;
+  z-index: 14;
 }
 
 .toggle {
@@ -108,6 +110,30 @@
   transform: translate(-50%, -140%);
   display: none;
   white-space: nowrap;
+}
+
+/*
+ * The mode toggle floats over a scrolling mosaic, so cells would otherwise
+ * collide with it on the way past. This scrim fades them out behind the
+ * controls instead — no hard toolbar edge, and the chamber glow still reads.
+ */
+.topScrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--nav-h) + 118px);
+  z-index: 12;
+  pointer-events: none;
+  /* Solid where the controls actually sit, then released so the chamber glow
+     returns rather than ending on a hard toolbar edge. */
+  background: linear-gradient(
+    to bottom,
+    rgb(4, 7, 13) 0%,
+    rgb(4, 7, 13) 52%,
+    rgba(4, 7, 13, 0.88) 70%,
+    rgba(4, 7, 13, 0) 100%
+  );
 }
 
 /* CARDS layer sits above the blurred canvas; the glow leaking through is intentional. */
