@@ -31,6 +31,7 @@ import {
   Scene,
   Sprite,
   SpriteMaterial,
+  RepeatWrapping,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -71,9 +72,9 @@ export interface ChamberOptions extends ChamberCallbacks {
 interface Tower {
   group: Group
   edges: LineSegments
-  cap: LineSegments
+  shaft: Sprite
+  crown: Sprite
   glow: Sprite
-  beaconGlow: Sprite
   solid: Mesh
   floors: LineSegments[]
   height: number
@@ -95,6 +96,61 @@ const makeGlowTexture = (): CanvasTexture => {
     ctx.fillRect(0, 0, 128, 128)
   }
   return new CanvasTexture(canvas)
+}
+
+/**
+ * Surface motif: a dark panel grid with a scattering of lit pads, so a tower
+ * face reads as a built thing rather than a flat plane. Deliberately low
+ * contrast — the light shafts are the focus, this is only texture underneath
+ * them. Seeded per tower so no two facades repeat.
+ */
+const makePanelTexture = (seed: number): CanvasTexture => {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  const random = mulberry32(seed)
+
+  if (ctx) {
+    ctx.fillStyle = '#050d16'
+    ctx.fillRect(0, 0, size, size)
+
+    // Panel seams, only just there.
+    ctx.strokeStyle = 'rgba(22, 62, 92, 0.3)'
+    ctx.lineWidth = 1
+    for (let i = 1; i < 6; i++) {
+      const p = (size / 6) * i
+      ctx.beginPath()
+      ctx.moveTo(p, 0)
+      ctx.lineTo(p, size)
+      ctx.moveTo(0, p)
+      ctx.lineTo(size, p)
+      ctx.stroke()
+    }
+
+    // Pads. Mostly barely lit; a handful read as windows with something behind
+    // them. Any brighter and the motif starts competing with the shafts.
+    for (let i = 0; i < 26; i++) {
+      const w = 5 + random() * 16
+      const h = 3 + random() * 5
+      const x = random() * (size - w)
+      const y = random() * (size - h)
+      const roll = random()
+      ctx.fillStyle =
+        roll > 0.93
+          ? 'rgba(96, 190, 240, 0.42)'
+          : roll > 0.72
+            ? 'rgba(34, 92, 130, 0.32)'
+            : 'rgba(16, 44, 66, 0.55)'
+      ctx.fillRect(x, y, w, h)
+    }
+  }
+
+  const texture = new CanvasTexture(canvas)
+  texture.wrapS = RepeatWrapping
+  texture.wrapT = RepeatWrapping
+  return texture
 }
 
 export const createChamber = (options: ChamberOptions) => {
@@ -140,6 +196,7 @@ export const createChamber = (options: ChamberOptions) => {
   scene.add(gridA, gridB)
 
   const glowTexture: Texture = makeGlowTexture()
+  const basePanelTexture = makePanelTexture(0x5eed)
 
   const poolMaterial = new MeshBasicMaterial({
     map: glowTexture,
@@ -193,6 +250,7 @@ export const createChamber = (options: ChamberOptions) => {
     particleGeometry,
     particleMaterial,
     glowTexture,
+    basePanelTexture,
   ]
   const birth: number[] = []
   const start = performance.now()
@@ -204,7 +262,7 @@ export const createChamber = (options: ChamberOptions) => {
     // Phyllotaxis: tight, towers nearly shoulder-to-shoulder. The coefficient is
     // a touch above the spec's 2.05 because the footprints are now wider — at
     // 2.05 they interpenetrate and the cluster reads as one mass.
-    const radius = i === 0 ? 0 : 2.2 + 2.75 * Math.sqrt(i)
+    const radius = i === 0 ? 0 : 2.6 + 3.5 * Math.sqrt(i)
     group.position.set(Math.cos(i * GOLDEN_ANGLE) * radius, 0, Math.sin(i * GOLDEN_ANGLE) * radius)
 
     /*
@@ -213,12 +271,17 @@ export const createChamber = (options: ChamberOptions) => {
      * which the perspective flattens — coupling both gives the cluster a
      * silhouette you can read at a glance.
      */
-    const footprint = 2.5 + node.weight * 0.34 + random() * 0.6
+    const footprint = 2.9 + node.weight * 0.42 + random() * 0.6
     // The falloff term guarantees the peak sits at centre.
     const height = (7 + node.weight * 4.6) * (1 - 0.028 * i) + random() * 1.5
 
     const solidGeometry = new BoxGeometry(footprint, height, footprint)
-    const solidMaterial = new MeshBasicMaterial({ color: CORE })
+    // Cloned so each tower can scale the pattern to its own size and keep the
+    // pads square; clones share the underlying bitmap.
+    const panelTexture = basePanelTexture.clone()
+    panelTexture.needsUpdate = true
+    panelTexture.repeat.set(Math.max(1, Math.round(footprint / 2.6)), Math.max(2, Math.round(height / 5.5)))
+    const solidMaterial = new MeshBasicMaterial({ color: 0xffffff, map: panelTexture })
     const solid = new Mesh(solidGeometry, solidMaterial)
     solid.position.y = height / 2
     solid.userData.index = i
@@ -246,7 +309,7 @@ export const createChamber = (options: ChamberOptions) => {
     const floorMaterial = new LineBasicMaterial({
       color: FLOOR_LINE,
       transparent: true,
-      opacity: 0.62,
+      opacity: 0.4,
       blending: AdditiveBlending,
     })
     for (let f = 1; f < Math.floor(height / 3.4); f++) {
@@ -257,15 +320,36 @@ export const createChamber = (options: ChamberOptions) => {
       floors.push(floor)
     }
 
-    const capGeometry = new EdgesGeometry(new BoxGeometry(footprint * 0.4, 0.5, footprint * 0.4))
-    const capMaterial = new LineBasicMaterial({
+    /*
+     * A light shaft rising out of the roof, in place of the wireframe cap box
+     * that used to sit up there looking like freight. This is the tower's
+     * signal — the surface motif stays quiet underneath it.
+     */
+    const shaftHeight = 11 + node.weight * 2.1
+    const shaftMaterial = new SpriteMaterial({
+      map: glowTexture,
+      color: HOLO_BRIGHT,
+      transparent: true,
+      opacity: 0.2,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    })
+    const shaft = new Sprite(shaftMaterial)
+    shaft.scale.set(footprint * 0.42, shaftHeight, 1)
+    shaft.position.y = height + shaftHeight * 0.42
+
+    // Hot spot where the shaft leaves the roof.
+    const crownMaterial = new SpriteMaterial({
+      map: glowTexture,
       color: HOLO_HOT,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.4,
       blending: AdditiveBlending,
+      depthWrite: false,
     })
-    const cap = new LineSegments(capGeometry, capMaterial)
-    cap.position.y = height + 0.3
+    const crown = new Sprite(crownMaterial)
+    crown.scale.set(footprint * 0.95, footprint * 0.95, 1)
+    crown.position.y = height + 0.2
 
     const glowMaterial = new SpriteMaterial({
       map: glowTexture,
@@ -276,20 +360,8 @@ export const createChamber = (options: ChamberOptions) => {
       depthWrite: false,
     })
     const glow = new Sprite(glowMaterial)
-    glow.scale.set(footprint * 3.1, height * 1.35, 1)
+    glow.scale.set(footprint * 2.3, height * 1.05, 1)
     glow.position.y = height * 0.55
-
-    const beaconMaterial = new SpriteMaterial({
-      map: glowTexture,
-      color: HOLO_BRIGHT,
-      transparent: true,
-      opacity: 0.5,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    })
-    const beaconGlow = new Sprite(beaconMaterial)
-    beaconGlow.scale.set(2.4, 2.4, 1)
-    beaconGlow.position.y = height + 0.4
 
     /*
      * Contact pool. Without it the towers read as floating in front of a grid
@@ -309,11 +381,11 @@ export const createChamber = (options: ChamberOptions) => {
     contact.position.y = 0.15
     contact.material.rotation = 0
 
-    group.add(solid, edges, cap, glow, beaconGlow, contact)
+    group.add(solid, edges, shaft, crown, glow, contact)
     group.scale.y = reducedMotion ? 1 : 0.001
     scene.add(group)
 
-    towers.push({ group, edges, cap, glow, beaconGlow, solid, floors, height, index: i })
+    towers.push({ group, edges, shaft, crown, glow, solid, floors, height, index: i })
     pickables.push(solid)
     birth.push(start + i * 45)
 
@@ -325,10 +397,10 @@ export const createChamber = (options: ChamberOptions) => {
       edgeMaterial,
       floorGeometry,
       floorMaterial,
-      capGeometry,
-      capMaterial,
+      panelTexture,
+      shaftMaterial,
+      crownMaterial,
       glowMaterial,
-      beaconMaterial,
       contactMaterial,
     )
   })
@@ -354,7 +426,9 @@ export const createChamber = (options: ChamberOptions) => {
   )
   const restHeight = Math.max(7, tallest * 0.38)
   const halfFov = Math.tan((camera.fov * Math.PI) / 360)
-  const needed = Math.max(tallest + 5 - restHeight, restHeight, widest * 0.62)
+  // Headroom covers the crown and the base of the light shaft; the shaft's soft
+  // tip is allowed to leave the frame rather than shrinking the whole cluster.
+  const needed = Math.max(tallest + 11 - restHeight, restHeight, widest * 0.62)
   const framingRadius = Math.max(16, Math.min(66, (needed / halfFov) * 1.02))
 
   const state = {
@@ -433,6 +507,7 @@ export const createChamber = (options: ChamberOptions) => {
   /* ------------------------------------------------------- listeners ---- */
 
   const onPointerDown = (event: PointerEvent) => {
+    if (state.lowFps) return
     activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (activePointers.size === 1) {
       dragging = true
@@ -449,6 +524,7 @@ export const createChamber = (options: ChamberOptions) => {
   }
 
   const onPointerMove = (event: PointerEvent) => {
+    if (state.lowFps) return
     if (activePointers.has(event.pointerId)) {
       activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
     }
@@ -479,6 +555,7 @@ export const createChamber = (options: ChamberOptions) => {
   }
 
   const onPointerUp = (event: PointerEvent) => {
+    if (state.lowFps) return
     const wasDragging = dragging && moved > 6
     activePointers.delete(event.pointerId)
     if (activePointers.size < 2) pinchDistance = 0
@@ -494,6 +571,7 @@ export const createChamber = (options: ChamberOptions) => {
   }
 
   const onWheel = (event: WheelEvent) => {
+    if (state.lowFps) return
     event.preventDefault()
     state.targetRadius = clampRadius(state.targetRadius + event.deltaY * 0.03)
     state.lastInteraction = performance.now()
@@ -595,8 +673,9 @@ export const createChamber = (options: ChamberOptions) => {
       glowMaterial.opacity += (glowTarget - glowMaterial.opacity) * 0.12
 
       const pulse = Math.abs(Math.sin(now * 0.002 + i)) * (dimmed ? 0.3 : 1)
-      ;(tower.cap.material as LineBasicMaterial).opacity = 0.5 + 0.45 * pulse
-      ;(tower.beaconGlow.material as SpriteMaterial).opacity = 0.25 + 0.35 * pulse
+      const lift = isSelected || isHovered ? 1.8 : 1
+      ;(tower.shaft.material as SpriteMaterial).opacity = (0.12 + 0.13 * pulse) * lift
+      ;(tower.crown.material as SpriteMaterial).opacity = (0.24 + 0.2 * pulse) * lift
 
       if (isHovered && state.selected === null) {
         projected.set(tower.group.position.x, tower.height + 2.4, tower.group.position.z).project(camera)

@@ -2,7 +2,7 @@ import 'server-only'
 import { cache } from 'react'
 import { getPayloadClient } from './payload'
 import { hasRichText } from './richtext'
-import { periodLabel, upper } from './format'
+import { monthYear, periodLabel, upper } from './format'
 import { SECTIONS } from './sections'
 import { CTF_CATEGORY_ORDER } from './ctf'
 import type {
@@ -119,6 +119,8 @@ const fromProject = (doc: Project): SurveyItem => {
     kicker: upper(doc.category),
     cornerLabel: cornerLabel(tags, subtag, doc.category),
     periodLabel: null,
+    // The month is optional; without one the record just reads as a year.
+    dateLabel: monthYear(doc.date) ?? String(doc.year),
     year: doc.year,
     weight: doc.weight,
     tags,
@@ -147,6 +149,7 @@ const fromExperience = (doc: Experience): SurveyItem => {
     kicker: upper(doc.organization),
     cornerLabel: cornerLabel(tags, subtag, doc.employmentType ?? 'ROLE'),
     periodLabel: periodLabel(doc.startDate, doc.endDate, doc.current),
+    dateLabel: String(doc.year ?? ''),
     year: doc.year ?? new Date(doc.startDate).getUTCFullYear(),
     weight: doc.weight,
     tags,
@@ -178,6 +181,7 @@ const fromOrganization = (doc: Organization): SurveyItem => {
     kicker: upper(doc.role),
     cornerLabel: cornerLabel(tags, subtag, doc.role),
     periodLabel: periodLabel(doc.startDate, doc.endDate, doc.current),
+    dateLabel: String(doc.year ?? ''),
     year: doc.year ?? new Date(doc.startDate).getUTCFullYear(),
     weight: doc.weight,
     tags,
@@ -209,6 +213,7 @@ const fromAward = (doc: Award): SurveyItem => {
     kicker: upper(doc.placement || doc.issuer),
     cornerLabel: cornerLabel(tags, subtag, doc.scope ?? 'AWARD'),
     periodLabel: upper(doc.issuer),
+    dateLabel: String(doc.year ?? ''),
     year: doc.year ?? new Date(doc.date).getUTCFullYear(),
     weight: doc.weight,
     tags,

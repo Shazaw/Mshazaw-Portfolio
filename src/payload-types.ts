@@ -154,6 +154,13 @@ export interface Project {
    * e.g. ENCRYPTION, PLATFORM, RESEARCH.
    */
   category: string;
+  /**
+   * Optional. When it shipped, to the month — shown as e.g. AUG 2026.
+   */
+  date?: string | null;
+  /**
+   * Derived from the date when one is set.
+   */
   year: number;
   /**
    * Short mono tag shown beside the title. Defaults to the first tag.
@@ -824,6 +831,7 @@ export interface ProjectsSelect<T extends boolean = true> {
   slug?: T;
   summary?: T;
   category?: T;
+  date?: T;
   year?: T;
   subtag?: T;
   tags?: T;

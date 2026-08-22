@@ -114,6 +114,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "date": {
+          "name": "date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "year": {
           "name": "year",
           "type": "numeric",
@@ -3859,6 +3866,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "8c88cd97-28a8-4dc0-be08-38e9ffe8df63",
+  "id": "f49a7bd2-9f98-40e3-9994-11c0471b3f59",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

@@ -23,6 +23,8 @@ export interface SurveyItem {
   cornerLabel: string
   /** Human period line for the popup, e.g. `JAN 2025 — PRESENT`. */
   periodLabel: string | null
+  /** `AUG 2026` when a month is known, otherwise just the year. */
+  dateLabel: string
   year: number
   weight: number
   tags: string[]

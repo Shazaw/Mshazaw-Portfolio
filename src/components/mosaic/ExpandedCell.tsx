@@ -39,9 +39,7 @@ export const ExpandedCell = ({
     if (offscreen) node.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [item.slug])
 
-  const meta = [item.periodLabel ?? String(item.year), item.role ?? item.kicker, `Weight ${item.weight}/5`]
-    .filter(Boolean)
-    .join(' · ')
+  const meta = [item.periodLabel ?? item.dateLabel, item.role ?? item.kicker].filter(Boolean).join(' · ')
 
   return (
     <article ref={ref} className={`${styles.cell} ${styles.expanded}`} aria-labelledby={`expanded-${item.slug}`}>

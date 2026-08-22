@@ -15,6 +15,9 @@ import styles from './Chamber.module.css'
 
 type Mode = 'grid' | 'cards'
 
+/** The panel highlights the heaviest handful; the rest live in the cluster. */
+const PANEL_RECORDS = 5
+
 const LOADER_MIN_MS = 650
 const LOADER_TIMEOUT_MS = 4000
 
@@ -349,7 +352,7 @@ export const SectionView = ({
             <div className={styles.panelRule} />
           </div>
           <ul className={styles.records}>
-            {items.map((item, index) => (
+            {items.slice(0, PANEL_RECORDS).map((item, index) => (
               <li key={item.id}>
                 <button
                   type="button"
@@ -363,11 +366,18 @@ export const SectionView = ({
                 >
                   <span className={styles.recordNum}>{String(index + 1).padStart(2, '0')}</span>
                   <span className={styles.recordTitle}>{item.title}</span>
-                  <span className={styles.recordWeight}>W{item.weight}</span>
+                  <span className={styles.recordArrow} aria-hidden="true">
+                    ↗
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
+          {items.length > PANEL_RECORDS ? (
+            <p className={styles.panelMore}>
+              +{items.length - PANEL_RECORDS} more · orbit the cluster or switch to cards
+            </p>
+          ) : null}
         </div>
       ) : null}
 

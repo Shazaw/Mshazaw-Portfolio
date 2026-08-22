@@ -26,3 +26,17 @@ export const deriveYearFromDate: CollectionBeforeChangeHook = ({ data }) => {
   }
   return data
 }
+
+/**
+ * Projects carry an optional month. When one is set it wins, so the year can
+ * never drift out of step with the date shown beside it.
+ */
+export const deriveProjectYear: CollectionBeforeChangeHook = ({ data }) => {
+  if (data?.date) {
+    const parsed = new Date(data.date)
+    if (!Number.isNaN(parsed.getTime())) {
+      return { ...data, year: parsed.getUTCFullYear() }
+    }
+  }
+  return data
+}

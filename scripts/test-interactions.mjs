@@ -54,6 +54,12 @@ const run = async () => {
       return canvas ? getComputedStyle(canvas).filter : ''
     })
     check('canvas blurs behind CARDS', blurred.includes('blur'), blurred)
+
+    // A click on a mosaic cell must not also land on the tower behind it.
+    const canvasInert = await page.evaluate(
+      () => getComputedStyle(document.querySelector('canvas')).pointerEvents === 'none',
+    )
+    check('canvas stops taking clicks in CARDS', canvasInert === true)
     check('mosaic cells render', (await page.locator('article h3').count()) >= 10)
 
     const stored = await page.evaluate(() => localStorage.getItem('holo:mode:projects'))
@@ -199,7 +205,11 @@ const run = async () => {
     await page.waitForTimeout(4200)
 
     const rows = await page.locator('button[class*=record]').count()
-    check('panel lists every record', rows === 14, String(rows))
+    check('panel highlights five records', rows === 5, String(rows))
+    check(
+      'panel says how many more there are',
+      await page.locator('text=/\\+9 more/i').isVisible(),
+    )
     check('panel carries the section heading', await page.locator('text=Selected work').isVisible())
 
     const title = (await page.locator('button[class*=record]').nth(3).locator('span').nth(1).textContent())?.trim()
@@ -444,6 +454,9 @@ const run = async () => {
     check('mosaic stays a connected block (no gap)', block.gap === 'normal' || parseFloat(block.gap) === 0, block.gap)
     check('mosaic cells keep square corners', parseFloat(block.radius) === 0, block.radius)
     check('mosaic cells share their seam', Math.abs(block.seam) <= 1, `${block.seam}px`)
+
+    const weightText = await page.evaluate(() => /\bW\s?\d\s?\/\s?5\b/.test(document.body.innerText))
+    check('no weight readout is shown to the reader', weightText === false)
     await ctx.close()
   }
 

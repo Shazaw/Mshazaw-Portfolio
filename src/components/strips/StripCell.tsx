@@ -125,7 +125,7 @@ export const StripCell = ({
 
       <div className={styles.caption}>
         <span>
-          {item.year} · {item.role ?? item.kicker}
+          {item.dateLabel} · {item.role ?? item.kicker}
         </span>
         <span className={styles.index}>{indexOf(index, total)}</span>
       </div>

@@ -22,6 +22,9 @@
 
 .blurred {
   filter: blur(7px) brightness(0.55);
+  /* The scene is backdrop only in CARDS — without this a click on a mosaic cell
+     also lands on the tower behind it. */
+  pointer-events: none;
 }
 
 /* Static gradient for the no-canvas fallback. */
@@ -307,11 +310,26 @@
   white-space: nowrap;
 }
 
-.recordWeight {
+.recordArrow {
+  font-size: 11px;
+  color: rgba(63, 198, 255, 0);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.record:hover .recordArrow,
+.record:focus-visible .recordArrow,
+.record[data-active='true'] .recordArrow {
+  color: rgba(63, 198, 255, 0.8);
+}
+
+.panelMore {
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.1em;
-  color: rgba(63, 198, 255, 0.55);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  margin: 16px 0 0;
+  pointer-events: none;
 }
 
 /* Below this the panel would crowd the cluster, so the chamber recentres. */

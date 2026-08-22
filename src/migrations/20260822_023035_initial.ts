@@ -18,6 +18,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`slug\` text,
   	\`summary\` text NOT NULL,
   	\`category\` text NOT NULL,
+  	\`date\` text,
   	\`year\` numeric NOT NULL,
   	\`subtag\` text,
   	\`description\` text,

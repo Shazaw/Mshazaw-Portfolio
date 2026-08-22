@@ -90,15 +90,18 @@ export const Mosaic = ({
         </h3>
         <p className={styles.desc}>{item.summary}</p>
         <p className={styles.meta}>
-          <span>{item.year}</span>
-          <span aria-hidden="true">·</span>
-          <span className={styles.metaAccent}>W {item.weight}/5</span>
+          <span className={styles.metaAccent}>{item.dateLabel}</span>
           {item.periodLabel ? (
             <>
               <span aria-hidden="true">·</span>
               <span>{item.periodLabel}</span>
             </>
-          ) : null}
+          ) : (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{item.kicker}</span>
+            </>
+          )}
         </p>
       </article>
     )

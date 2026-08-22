@@ -10,6 +10,7 @@ import {
   weightField,
 } from './fields/shared'
 import { revalidateCollection, revalidateCollectionDelete } from './hooks/revalidate'
+import { deriveProjectYear } from './hooks/deriveYear'
 
 export const Projects: CollectionConfig = {
   slug: 'projects',
@@ -27,6 +28,7 @@ export const Projects: CollectionConfig = {
     delete: ({ req }) => Boolean(req.user),
   },
   hooks: {
+    beforeChange: [deriveProjectYear],
     afterChange: [revalidateCollection('/projects')],
     afterDelete: [revalidateCollectionDelete('/projects')],
   },
@@ -45,12 +47,26 @@ export const Projects: CollectionConfig = {
           admin: { width: '50%', description: 'e.g. ENCRYPTION, PLATFORM, RESEARCH.' },
         },
         {
+          name: 'date',
+          type: 'date',
+          admin: {
+            width: '50%',
+            description: 'Optional. When it shipped, to the month — shown as e.g. AUG 2026.',
+            date: { pickerAppearance: 'monthOnly', displayFormat: 'MMM yyyy' },
+          },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
+        {
           name: 'year',
           type: 'number',
           required: true,
           min: 2000,
           max: 2100,
-          admin: { width: '50%' },
+          admin: { width: '50%', description: 'Derived from the date when one is set.' },
         },
       ],
     },

@@ -34,7 +34,7 @@ export const PopupCard = ({
       index={(target?.index ?? 0) + 1}
       singular={singular}
       title={item?.title ?? ''}
-      meta={[item?.periodLabel ?? String(item?.year ?? ''), item?.role ?? item?.kicker ?? '', `Weight ${item?.weight ?? 0}/5`]
+      meta={[item?.periodLabel ?? item?.dateLabel ?? '', item?.role ?? item?.kicker ?? '']
         .filter(Boolean)
         .join(' · ')}
       fallbackBody={item?.summary ?? ''}
