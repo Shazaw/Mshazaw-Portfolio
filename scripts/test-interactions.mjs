@@ -277,7 +277,7 @@ const run = async () => {
     check('repeated selections do not compound the zoom', drift <= 4, settled.join(', '))
     check('selection zooms in from the framing distance', settled[0] < framing, `${settled[0]} vs ${framing}`)
 
-    // Moving between towers should retreat before closing in again.
+    // Moving between towers should pan across at a steady distance.
     await page.evaluate(() => {
       window.__arc = []
       const canvas = document.querySelector('canvas')
@@ -293,10 +293,16 @@ const run = async () => {
     await rows.nth(3).click()
     await page.waitForTimeout(2600)
     const arc = await page.evaluate(() => window.__arc)
-    const peak = arc.length ? Math.max(...arc) : before
+    const swing = arc.length ? Math.max(...arc, before) - Math.min(...arc, before) : 0
     const end = await radius()
-    check('switching towers pulls back before closing in', peak > before + 2, `${before} → ${peak} → ${end}`)
-    check('and settles back at the focus distance', Math.abs(end - settled[0]) <= 4, `${end} vs ${settled[0]}`)
+    check('switching towers holds the zoom', swing <= 3, `${before} → swing ${swing} → ${end}`)
+    check('and stays at the focus distance', Math.abs(end - settled[0]) <= 4, `${end} vs ${settled[0]}`)
+
+    // Closing the card is what pulls the camera back out.
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(2600)
+    const afterClose = await radius()
+    check('closing the card zooms back out', afterClose > end + 8, `${end} → ${afterClose} (framing ${framing})`)
 
     // Clicking chrome must not be read as a click on the scene.
     await rows.nth(2).click()

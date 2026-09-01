@@ -512,52 +512,36 @@ export const createChamber = (options: ChamberOptions) => {
     options.onHoverChange(index)
   }
 
-  /** How close a selected tower is framed, as a fraction of the framing distance. */
-  const focusRadius = Math.max(24, framingRadius * 0.72)
   /**
-   * Time spent pulling back before approaching a different tower. Long enough
-   * that the retreat reads as a deliberate move rather than a wobble, short
-   * enough that it never feels like waiting.
+   * How close a selected tower is framed, as a fraction of the framing distance.
+   * Absolute, never relative to where the camera already is — deriving it from
+   * the current radius compounded on every click and walked the camera into the
+   * cluster.
    */
-  const REFRAME_PULLBACK_MS = 520
-  let reframeAt = 0
+  const focusRadius = Math.max(24, framingRadius * 0.72)
 
   const select = (index: number | null) => {
     if (index === null) {
       state.selected = null
+      // Closing the card is the only thing that pulls the camera back out.
       state.desiredTarget.set(0, restHeight, 0)
       state.targetRadius = framingRadius
-      reframeAt = 0
       options.onSelectChange(null)
       return
     }
     const tower = towers[index]
     if (!tower) return
 
-    const switching = state.selected !== null && state.selected !== index
     state.selected = index
     chipEl.style.display = 'none'
     state.desiredTarget.set(tower.group.position.x * 0.6, tower.height * 0.4, tower.group.position.z * 0.6)
 
     /*
-     * The focus distance is a fixed fraction of the framing distance, never a
-     * fraction of wherever the camera happens to be — multiplying the current
-     * radius compounded on every click and walked the camera into the cluster.
+     * Moving between towers holds the zoom and simply pans across — the camera
+     * only pulls back when the card is closed. Changing distance on every switch
+     * made a browse through several records feel like it was breathing.
      */
-    if (switching) {
-      /*
-       * Moving between two towers: pull back toward the framing distance first,
-       * then close in on the new one. Cutting straight across at focus distance
-       * slides the camera through the cluster, which reads as a glitch rather
-       * than a move.
-       */
-      state.targetRadius = Math.min(framingRadius, focusRadius * 1.4)
-      reframeAt = performance.now() + REFRAME_PULLBACK_MS
-    } else {
-      state.targetRadius = focusRadius
-      reframeAt = 0
-    }
-
+    state.targetRadius = focusRadius
     state.lastInteraction = performance.now()
     options.onSelectChange(index)
   }
@@ -703,11 +687,6 @@ export const createChamber = (options: ChamberOptions) => {
       state.targetTheta += 0.0012
     }
 
-    // Second half of a tower-to-tower move: the pull-back has read, now approach.
-    if (reframeAt !== 0 && now >= reframeAt) {
-      reframeAt = 0
-      if (state.selected !== null) state.targetRadius = focusRadius
-    }
 
     state.theta += (state.targetTheta - state.theta) * 0.08
     state.phi += (state.targetPhi - state.phi) * 0.08
