@@ -7,7 +7,7 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   const slugs = await getAllCtfCompetitionSlugs()
   const now = new Date()
 
-  const routes = ['', '/about', '/projects', '/experience', '/organizations', '/ctf', '/awards']
+  const routes = ['', '/projects', '/experience', '/organizations', '/ctf', '/awards']
 
   return [
     ...routes.map((route) => ({

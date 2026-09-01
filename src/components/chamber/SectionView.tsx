@@ -345,7 +345,7 @@ export const SectionView = ({
         <div className={styles.panel} ref={panelRef}>
           <div className={styles.panelHead}>
             <Eyebrow onDark>
-              {section.num} · {section.label} · N={items.length}
+              {section.num} · {section.label}
             </Eyebrow>
             <p className={styles.panelTitle}>{section.heading}</p>
             <p className={styles.panelBlurb}>{section.blurb}</p>

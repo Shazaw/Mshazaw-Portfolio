@@ -20,7 +20,7 @@ export const SectionPage = async ({ sectionKey }: { sectionKey: SectionKey }) =>
       section={section}
       items={items}
       nodes={toChamberNodes(items)}
-      surveyLabel={surveyLabel(section, items.length, updatedAt)}
+      surveyLabel={surveyLabel(section, updatedAt)}
     />
   )
 }

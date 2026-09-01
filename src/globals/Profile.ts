@@ -13,7 +13,7 @@ export const Profile: GlobalConfig = {
     update: ({ req }) => Boolean(req.user),
   },
   hooks: {
-    afterChange: [revalidateGlobal('/about', '/projects', '/experience', '/organizations', '/awards', '/ctf')],
+    afterChange: [revalidateGlobal('/projects', '/experience', '/organizations', '/awards', '/ctf')],
   },
   fields: [
     {
@@ -50,6 +50,15 @@ export const Profile: GlobalConfig = {
               ],
             },
             {
+              name: 'heroAccentWord',
+              type: 'text',
+              defaultValue: 'AHSAN',
+              admin: {
+                description:
+                  'The one word in the hero drawn as an outlined cyan stroke. Must appear in one of the two lines above.',
+              },
+            },
+            {
               name: 'tagline',
               type: 'textarea',
               required: true,
@@ -72,14 +81,18 @@ export const Profile: GlobalConfig = {
               name: 'aboutIntro',
               type: 'textarea',
               maxLength: 400,
-              admin: { description: 'Lead paragraph of /about, set larger than the body.' },
+              admin: { description: 'Lead paragraph of the homepage About chapter, set larger than the body.' },
             },
-            { name: 'about', type: 'richText' },
+            {
+              name: 'about',
+              type: 'richText',
+              admin: { description: 'The rest of the About chapter, under the lead paragraph.' },
+            },
             {
               name: 'focusAreas',
               type: 'array',
               labels: { singular: 'Focus area', plural: 'Focus areas' },
-              admin: { initCollapsed: true, description: 'The connected strip near the top of /about.' },
+              admin: { initCollapsed: true, description: 'The connected strip inside the homepage About chapter.' },
               fields: [
                 { name: 'title', type: 'text', required: true },
                 { name: 'body', type: 'textarea', required: true, maxLength: 240 },

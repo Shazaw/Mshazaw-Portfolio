@@ -41,10 +41,10 @@ npm run dev                   # http://localhost:3000, admin at /admin
 `npm run seed` is idempotent — it matches documents by slug and updates in place.
 `npm run seed -- --fresh` wipes the survey collections first.
 
-> **Projects are real** — pulled from github.com/Shazaw plus the two engagements without a
-> repository, with screenshots captured from the running projects (see `seed-assets/`).
-> **Everything else is still placeholder** and should be verified and rewritten at `/admin`
-> before the site is published.
+> **Projects, experience, organizations and awards are real** — projects from
+> github.com/Shazaw with screenshots captured from the running builds (see `seed-assets/`),
+> the rest transcribed from the owner's LinkedIn. **The CTF competitions and challenges are
+> still placeholder** and should be rewritten at `/admin` before the site is published.
 
 ### Environment
 
@@ -243,7 +243,6 @@ Current measurements (transferred, compressed):
 | Route | Route JS | 3D chunk | Page total |
 |---|---|---|---|
 | `/` | 174 KB | 131 KB | 441 KB |
-| `/about` | 173 KB | — | 283 KB |
 | `/projects` | 171 KB | 131 KB | 413 KB |
 
 Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.

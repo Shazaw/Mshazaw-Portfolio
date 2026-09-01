@@ -135,3 +135,195 @@
     gap: 36px;
   }
 }
+
+/* --------------------------------------------------- about chapter ---- */
+/*
+ * About lives entirely here — there is no separate page — so this carries the
+ * lead paragraph, the prose under it, the focus strip and education.
+ */
+
+.aboutLead {
+  max-width: 62ch;
+  font-size: clamp(19px, 1.7vw, 24px);
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0 0 26px;
+}
+
+.aboutProse {
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--graphite);
+}
+
+.aboutProse :global(p) {
+  margin: 0 0 16px;
+}
+
+.aboutProse :global(a) {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--holo);
+  text-underline-offset: 3px;
+}
+
+.aboutProse :global(ul) {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+
+.aboutProse :global(li) {
+  margin-bottom: 6px;
+}
+
+/* Connected block — same rule as the mosaic: shared hairlines, no gaps. */
+.focusStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0;
+  margin-top: 52px;
+  border: 1px solid var(--hairline);
+  background: var(--paper-pure);
+}
+
+.focusCell {
+  position: relative;
+  padding: 30px 30px 28px;
+  border-right: 1px solid var(--hairline);
+}
+
+.focusCell:last-child {
+  border-right: 0;
+}
+
+.focusCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(63, 198, 255, 0);
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.focusCell:hover::after {
+  box-shadow: var(--ring-inset);
+}
+
+.focusTag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+
+.focusTitle {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 10px 0 8px;
+}
+
+.focusBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--graphite);
+  margin: 0;
+}
+
+.eduRows {
+  list-style: none;
+  margin: 44px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.eduRow {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: baseline;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.eduPeriod {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+
+.eduMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eduMain strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.eduSub {
+  color: var(--graphite);
+  font-size: 15px;
+}
+
+.eduDetail {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--holo);
+}
+
+/* ------------------------------------------------------- toolkit ---- */
+
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  margin-top: 40px;
+  border-top: 1px solid var(--hairline);
+  border-left: 1px solid var(--hairline);
+  background: var(--paper-pure);
+}
+
+.skillGroup {
+  padding: 26px 28px 28px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.skillTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin: 0 0 14px;
+  font-weight: 400;
+}
+
+.skillList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+}
+
+@media (max-width: 720px) {
+  .eduRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}

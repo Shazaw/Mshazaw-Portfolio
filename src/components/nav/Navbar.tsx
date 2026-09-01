@@ -13,7 +13,7 @@ export interface NavLinkDef {
 
 export const NAV_LINKS: NavLinkDef[] = [
   { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
+  // About is a chapter of the homepage, not a page of its own.
   { label: 'Projects', href: '/projects' },
   { label: 'Experience', href: '/experience' },
   { label: 'Orgs', href: '/organizations' },

@@ -1161,6 +1161,10 @@ export interface Profile {
    */
   heroLineTwo: string;
   /**
+   * The one word in the hero drawn as an outlined cyan stroke. Must appear in one of the two lines above.
+   */
+  heroAccentWord?: string | null;
+  /**
    * The paragraph under the hero.
    */
   tagline: string;
@@ -1170,9 +1174,12 @@ export interface Profile {
   role?: string | null;
   portrait?: (number | null) | Media;
   /**
-   * Lead paragraph of /about, set larger than the body.
+   * Lead paragraph of the homepage About chapter, set larger than the body.
    */
   aboutIntro?: string | null;
+  /**
+   * The rest of the About chapter, under the lead paragraph.
+   */
   about?: {
     root: {
       type: string;
@@ -1189,7 +1196,7 @@ export interface Profile {
     [k: string]: unknown;
   } | null;
   /**
-   * The connected strip near the top of /about.
+   * The connected strip inside the homepage About chapter.
    */
   focusAreas?:
     | {
@@ -1248,6 +1255,7 @@ export interface ProfileSelect<T extends boolean = true> {
   initials?: T;
   heroLineOne?: T;
   heroLineTwo?: T;
+  heroAccentWord?: T;
   tagline?: T;
   role?: T;
   portrait?: T;

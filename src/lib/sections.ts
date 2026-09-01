@@ -53,11 +53,11 @@ export const SECTION_ORDER: SectionKey[] = ['projects', 'experience', 'organizat
 export const sectionByCollection = (collection: string): SectionMeta | undefined =>
   SECTION_ORDER.map((key) => SECTIONS[key]).find((section) => section.collection === collection)
 
-/** `SEC 02 · PROJECTS · N=14 · UPD 2026-08` */
-export const surveyLabel = (section: SectionMeta, count: number, updated?: Date | string | null): string => {
+/** `SEC 02 · PROJECTS · UPD 2026-08` */
+export const surveyLabel = (section: SectionMeta, updated?: Date | string | null): string => {
   const date = updated ? new Date(updated) : new Date()
   const stamp = Number.isNaN(date.getTime())
     ? ''
     : ` · UPD ${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`
-  return `SEC ${section.num} · ${section.label} · N=${count}${stamp}`
+  return `SEC ${section.num} · ${section.label}${stamp}`
 }

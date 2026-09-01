@@ -3608,6 +3608,14 @@
           "autoincrement": false,
           "default": "'WIRYAWAN'"
         },
+        "hero_accent_word": {
+          "name": "hero_accent_word",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'AHSAN'"
+        },
         "tagline": {
           "name": "tagline",
           "type": "text",
@@ -3866,6 +3874,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "f49a7bd2-9f98-40e3-9994-11c0471b3f59",
+  "id": "14ec0dc4-8ad1-4192-8421-5e9ebe98cc9b",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

@@ -520,6 +520,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`initials\` text DEFAULT 'AZW',
   	\`hero_line_one\` text DEFAULT 'M. AHSAN ZAKI' NOT NULL,
   	\`hero_line_two\` text DEFAULT 'WIRYAWAN' NOT NULL,
+  	\`hero_accent_word\` text DEFAULT 'AHSAN',
   	\`tagline\` text NOT NULL,
   	\`role\` text DEFAULT 'CS undergraduate · cybersecurity',
   	\`portrait_id\` integer,

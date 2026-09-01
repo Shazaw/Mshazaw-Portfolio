@@ -71,7 +71,6 @@ const run = async () => {
 
   for (const [route, settle] of [
     ['/', 3000],
-    ['/about', 800],
     ['/projects', 4000],
     ['/ctf', 800],
     ['/ctf/cyber-jawara-national', 800],

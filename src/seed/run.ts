@@ -152,13 +152,17 @@ const run = async () => {
     await wipe(payload)
   } else {
     // Documents whose slug is no longer in the dataset are stale placeholders.
-    const keep = new Set(projects.map((p) => p.slug))
-    const live = await payload.find({ collection: 'projects', limit: 500, depth: 0, pagination: false })
-    const stale = live.docs.filter((d) => !keep.has((d as { slug?: string }).slug as never))
-    for (const d of stale) {
-      await payload.delete({ collection: 'projects', id: d.id })
+    const prune = async (collection: AnyCollection, slugs: readonly string[]) => {
+      const keep = new Set<string>(slugs)
+      const live = await payload.find({ collection, limit: 500, depth: 0, pagination: false })
+      const stale = live.docs.filter((d) => !keep.has(((d as { slug?: string }).slug ?? '') as string))
+      for (const doc of stale) await payload.delete({ collection, id: doc.id })
+      if (stale.length) console.log(`· removed ${stale.length} stale ${collection}`)
     }
-    if (stale.length) console.log(`· removed ${stale.length} stale project(s)`)
+    await prune('projects', projects.map((x) => x.slug))
+    await prune('experiences', experiences.map((x) => x.slug))
+    await prune('organizations', organizations.map((x) => x.slug))
+    await prune('awards', awards.map((x) => x.slug))
   }
 
   console.log('· users')
@@ -239,8 +243,8 @@ const run = async () => {
 
   console.log('─'.repeat(60))
   console.log('Seed complete.')
-  console.log('  projects        — real, from github.com/Shazaw plus two engagements.')
-  console.log('  everything else — PLACEHOLDER. Verify and rewrite it at /admin.\n')
+  console.log('  projects, experience, organizations, awards — real.')
+  console.log('  CTF competitions and challenges — still PLACEHOLDER. Rewrite at /admin.\n')
 
   process.exit(0)
 }

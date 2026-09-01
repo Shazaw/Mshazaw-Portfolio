@@ -1,6 +1,6 @@
 import styles from './Eyebrow.module.css'
 
-/** `— 02 · PROJECTS · SELECTED · N=14` */
+/** `— 02 · PROJECTS · SELECTED` */
 export const Eyebrow = ({
   children,
   onDark = false,
