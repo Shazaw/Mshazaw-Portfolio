@@ -105,6 +105,26 @@ socials, CV link, and SEO defaults.
 
 ---
 
+## The homepage journey
+
+One procedural Three.js scene, three acts, driven entirely by scroll:
+
+1. **The door.** A circuit-board portal fills the hero — instrument rings around a blank
+   disc, routed traces running out both sides. The rings' rotation is proportional to
+   scroll (clockwise down, counter-clockwise back up). At the end of the hero the wall
+   splits down the middle and the camera passes through. The split uses per-half clipping
+   planes: each half holds the *full* wall geometry cut at the moving split line, so the
+   seam is invisible while closed and the rings keep spinning across the cut while open.
+2. **The network.** Through the opening the camera veers right into a greyscale plexus
+   constellation — ink nodes in three print sizes, hairline links, dense to the right,
+   soft out-of-focus motes behind.
+3. **The survey.** Further down, the wireframe blueprint city fades in and the camera
+   settles into its slow orbit for the remaining chapters.
+
+The camera runs on keyframed stations interpolated over the damped scroll position; acts
+fade in scroll bands and toggle `visible` so only the current act renders; fog tightens
+for the white acts and opens up with the city.
+
 ## The chamber frame
 
 The cluster is pushed into the right of the frame by a frustum offset
