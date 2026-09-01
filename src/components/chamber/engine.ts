@@ -259,10 +259,14 @@ export const createChamber = (options: ChamberOptions) => {
     const random = mulberry32(hashSeed(node.slug || node.id))
     const group = new Group()
 
-    // Phyllotaxis: tight, towers nearly shoulder-to-shoulder. The coefficient is
-    // a touch above the spec's 2.05 because the footprints are now wider — at
-    // 2.05 they interpenetrate and the cluster reads as one mass.
-    const radius = i === 0 ? 0 : 3.0 + 5.6 * Math.sqrt(i)
+    /*
+     * Phyllotaxis. Well above the spec's 2.05 coefficient because the footprints
+     * are far wider than the spec's, and because these are BOXES — two squares
+     * on a diagonal touch long before their centre distance suggests it, which
+     * is what put the centre tower through its first neighbour.
+     * `scripts/test-cluster.ts` holds these two numbers to a real gap.
+     */
+    const radius = i === 0 ? 0 : 5.0 + 6.2 * Math.sqrt(i)
     group.position.set(Math.cos(i * GOLDEN_ANGLE) * radius, 0, Math.sin(i * GOLDEN_ANGLE) * radius)
 
     /*
@@ -470,6 +474,14 @@ export const createChamber = (options: ChamberOptions) => {
   let pointerX = 0
   let pointerY = 0
   let moved = 0
+  /*
+   * `pointerup` is bound to the window so a drag that leaves the canvas still
+   * ends cleanly. Without tracking where the gesture STARTED, though, every
+   * click anywhere on the page ran the raycast and deselected — including
+   * clicks on the record panel, which is why selecting a second tower always
+   * came from a cleared selection and never played its transition.
+   */
+  let gestureOnCanvas = false
   const activePointers = new Map<number, { x: number; y: number }>()
   let pinchDistance = 0
 
@@ -500,20 +512,52 @@ export const createChamber = (options: ChamberOptions) => {
     options.onHoverChange(index)
   }
 
+  /** How close a selected tower is framed, as a fraction of the framing distance. */
+  const focusRadius = Math.max(24, framingRadius * 0.72)
+  /**
+   * Time spent pulling back before approaching a different tower. Long enough
+   * that the retreat reads as a deliberate move rather than a wobble, short
+   * enough that it never feels like waiting.
+   */
+  const REFRAME_PULLBACK_MS = 520
+  let reframeAt = 0
+
   const select = (index: number | null) => {
     if (index === null) {
       state.selected = null
       state.desiredTarget.set(0, restHeight, 0)
       state.targetRadius = framingRadius
+      reframeAt = 0
       options.onSelectChange(null)
       return
     }
     const tower = towers[index]
     if (!tower) return
+
+    const switching = state.selected !== null && state.selected !== index
     state.selected = index
     chipEl.style.display = 'none'
     state.desiredTarget.set(tower.group.position.x * 0.6, tower.height * 0.4, tower.group.position.z * 0.6)
-    state.targetRadius = Math.max(24, state.targetRadius * 0.8)
+
+    /*
+     * The focus distance is a fixed fraction of the framing distance, never a
+     * fraction of wherever the camera happens to be — multiplying the current
+     * radius compounded on every click and walked the camera into the cluster.
+     */
+    if (switching) {
+      /*
+       * Moving between two towers: pull back toward the framing distance first,
+       * then close in on the new one. Cutting straight across at focus distance
+       * slides the camera through the cluster, which reads as a glitch rather
+       * than a move.
+       */
+      state.targetRadius = Math.min(framingRadius, focusRadius * 1.4)
+      reframeAt = performance.now() + REFRAME_PULLBACK_MS
+    } else {
+      state.targetRadius = focusRadius
+      reframeAt = 0
+    }
+
     state.lastInteraction = performance.now()
     options.onSelectChange(index)
   }
@@ -522,6 +566,7 @@ export const createChamber = (options: ChamberOptions) => {
 
   const onPointerDown = (event: PointerEvent) => {
     if (state.lowFps) return
+    gestureOnCanvas = true
     activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (activePointers.size === 1) {
       dragging = true
@@ -570,14 +615,17 @@ export const createChamber = (options: ChamberOptions) => {
 
   const onPointerUp = (event: PointerEvent) => {
     if (state.lowFps) return
+    const startedHere = gestureOnCanvas
     const wasDragging = dragging && moved > 6
+    gestureOnCanvas = false
     activePointers.delete(event.pointerId)
     if (activePointers.size < 2) pinchDistance = 0
     if (activePointers.size === 0) dragging = false
     canvas.releasePointerCapture?.(event.pointerId)
 
-    // A drag must never be read as a click on a tower.
-    if (!wasDragging && event.type === 'pointerup') {
+    // Only a gesture that began on the canvas counts as a click on the scene,
+    // and a drag must never be read as a click on a tower.
+    if (startedHere && !wasDragging && event.type === 'pointerup') {
       const index = pick(event)
       if (index !== null) select(index)
       else if (state.selected !== null) select(null)
@@ -640,6 +688,7 @@ export const createChamber = (options: ChamberOptions) => {
 
   let frame = 0
   let announced = false
+  let lastReportedRadius = -1
 
   const tick = () => {
     if (!state.running) return
@@ -652,6 +701,12 @@ export const createChamber = (options: ChamberOptions) => {
 
     if (!reducedMotion && now - state.lastInteraction > IDLE_BEFORE_AUTOROTATE && state.selected === null) {
       state.targetTheta += 0.0012
+    }
+
+    // Second half of a tower-to-tower move: the pull-back has read, now approach.
+    if (reframeAt !== 0 && now >= reframeAt) {
+      reframeAt = 0
+      if (state.selected !== null) state.targetRadius = focusRadius
     }
 
     state.theta += (state.targetTheta - state.theta) * 0.08
@@ -715,6 +770,17 @@ export const createChamber = (options: ChamberOptions) => {
       const y = Math.max(floor, Math.min(height - 40, (-projected.y * 0.5 + 0.5) * height))
       popupEl.style.left = `${x}px`
       popupEl.style.top = `${y}px`
+    }
+
+    /*
+     * Test seam: the orbit distance is otherwise unobservable from outside the
+     * canvas, and it is the thing that used to compound on every click. Written
+     * only when it actually moves, so this is not a per-frame DOM write.
+     */
+    const reported = Math.round(state.radius)
+    if (reported !== lastReportedRadius) {
+      lastReportedRadius = reported
+      canvas.dataset.radius = String(reported)
     }
 
     renderer.render(scene, camera)

@@ -9,8 +9,11 @@
 import { hashSeed, mulberry32 } from '../src/lib/random'
 
 const GOLDEN = 2.39996
-const RING_BASE = 3.0
-const RING_COEFFICIENT = 5.6
+const RING_BASE = 5.0
+const RING_COEFFICIENT = 6.2
+
+/** Towers must clear each other by at least this much on their nearest axis. */
+const MIN_GAP = 1.0
 
 const footprintOf = (weight: number, slug: string) =>
   3.5 + weight * 0.5 + mulberry32(hashSeed(slug))() * 0.6
@@ -37,8 +40,15 @@ for (const count of [4, 8, 14, 24, 40, 48]) {
 
   for (let i = 0; i < towers.length; i++) {
     for (let j = i + 1; j < towers.length; j++) {
-      const distance = Math.hypot(towers[i].x - towers[j].x, towers[i].z - towers[j].z)
-      const gap = distance - (towers[i].footprint + towers[j].footprint) / 2
+      /*
+       * Towers are axis-aligned BOXES. Two squares separate as soon as EITHER
+       * axis clears half their combined width — measuring Euclidean centre
+       * distance instead badly overestimates the gap on the diagonal, which is
+       * how a visibly overlapping pair passed this test before.
+       */
+      const half = (towers[i].footprint + towers[j].footprint) / 2
+      const gap =
+        Math.max(Math.abs(towers[i].x - towers[j].x), Math.abs(towers[i].z - towers[j].z)) - half
       worst = Math.min(worst, gap)
       if (gap < 0) {
         console.error(`FAIL n=${count}: towers ${i} and ${j} overlap by ${(-gap).toFixed(2)}`)
@@ -49,8 +59,10 @@ for (const count of [4, 8, 14, 24, 40, 48]) {
 }
 
 console.log(`cluster spacing: closest gap ${worst.toFixed(2)} units${failures === 0 ? ' ✓' : ''}`)
-if (worst < 0.75) {
-  console.error('FAIL: towers are touching — widen RING_COEFFICIENT or narrow the footprint')
+if (worst < MIN_GAP) {
+  console.error(
+    `FAIL: towers clear each other by only ${worst.toFixed(2)} — widen RING_BASE or RING_COEFFICIENT, or narrow the footprint`,
+  )
   failures++
 }
 process.exit(failures === 0 ? 0 : 1)

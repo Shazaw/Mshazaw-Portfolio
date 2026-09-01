@@ -195,12 +195,17 @@ Commit the generated migration — production applies it on container start.
 
 ## Testing
 
-`npm run test:unit` proves the two pieces of logic with real invariants:
+`npm run test:unit` proves the pure logic with real invariants:
 
 - **Mosaic layout** — 4,000+ randomised cases assert every row sums to exactly 6 (a short
   row gives the connected block a ragged edge, the one thing this layout cannot have) and
   that editor pins survive at realistic density.
 - **Placement derivation** — a semifinal is not a final; 4th place is not a podium.
+- **Cluster spacing** — no two towers may overlap on the floor plan, at every section size
+  with every record at maximum weight. Towers are axis-aligned *boxes*, so the check measures
+  the nearest-axis gap; an earlier version compared Euclidean centre distance and passed a
+  visibly overlapping pair, because two squares on a diagonal touch long before their centres
+  suggest it.
 
 `npm run test:e2e` drives a real browser over the built site: mode toggle and its
 persistence, mosaic → chamber fly-in, `?focus=` deep links, popup clamping, CTF mode

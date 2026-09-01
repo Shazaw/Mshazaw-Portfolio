@@ -249,6 +249,65 @@ const run = async () => {
     await narrow.close()
   }
 
+  /* ------------------------------------------------------ camera moves ---- */
+  {
+    console.log('\ncamera behaviour')
+    const ctx = await browser.newContext({ viewport: { width: 1600, height: 980 } })
+    const page = await ctx.newPage()
+    await page.goto(`${BASE}/projects`, { waitUntil: 'networkidle' })
+    await page.waitForTimeout(4600)
+
+    // The engine reports its orbit distance so this is observable at all.
+    const radius = () =>
+      page.evaluate(() => Number(document.querySelector('canvas')?.dataset.radius ?? 0))
+
+    const framing = await radius()
+    check('chamber reports an orbit distance', framing > 0, String(framing))
+
+    const rows = page.locator('button[class*=record]')
+    const settled = []
+    for (const n of [0, 1, 2, 3, 4]) {
+      await rows.nth(n).click()
+      await page.waitForTimeout(2400)
+      settled.push(await radius())
+    }
+    // Focus distance used to be a fraction of wherever the camera already was,
+    // so every click zoomed further in until it hit the floor.
+    const drift = Math.max(...settled) - Math.min(...settled)
+    check('repeated selections do not compound the zoom', drift <= 4, settled.join(', '))
+    check('selection zooms in from the framing distance', settled[0] < framing, `${settled[0]} vs ${framing}`)
+
+    // Moving between towers should retreat before closing in again.
+    await page.evaluate(() => {
+      window.__arc = []
+      const canvas = document.querySelector('canvas')
+      new MutationObserver(() => window.__arc.push(Number(canvas.dataset.radius))).observe(canvas, {
+        attributes: true,
+        attributeFilter: ['data-radius'],
+      })
+    })
+    await rows.nth(0).click()
+    await page.waitForTimeout(2600)
+    await page.evaluate(() => (window.__arc.length = 0))
+    const before = await radius()
+    await rows.nth(3).click()
+    await page.waitForTimeout(2600)
+    const arc = await page.evaluate(() => window.__arc)
+    const peak = arc.length ? Math.max(...arc) : before
+    const end = await radius()
+    check('switching towers pulls back before closing in', peak > before + 2, `${before} → ${peak} → ${end}`)
+    check('and settles back at the focus distance', Math.abs(end - settled[0]) <= 4, `${end} vs ${settled[0]}`)
+
+    // Clicking chrome must not be read as a click on the scene.
+    await rows.nth(2).click()
+    await page.waitForTimeout(1800)
+    const openBefore = (await popupState(page)).open
+    await page.locator('text=Selected work').click()
+    await page.waitForTimeout(900)
+    check('clicking the panel does not deselect the tower', openBefore && (await popupState(page)).open)
+    await ctx.close()
+  }
+
   /* ------------------------------------------------------ deep linking ---- */
   {
     console.log('\ndeep link — ?focus=')
