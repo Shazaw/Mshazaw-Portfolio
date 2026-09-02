@@ -252,22 +252,23 @@ export const motifFor = (key: string): string => {
  * same one, and a row of identical drawings is tiring to look at. Collisions
  * step to the next unused motif, deterministically and in order.
  */
-export const distinctMotifs = (keys: string[]): string[] => {
+export const distinctMotifs = (keys: string[], seed?: string): string[] => {
   const used = new Set<string>()
+  // Rotating the catalogue by the section keeps two sections from landing on
+  // the same trio, which would undo the point of varying them at all.
+  const shift = seed ? Math.floor(seededRandom(seed)() * MOTIF_KEYS.length) : 0
+
   return keys.map((key) => {
-    let motif = motifFor(key)
-    if (used.has(motif)) {
-      const start = MOTIF_KEYS.indexOf(motif)
-      for (let step = 1; step <= MOTIF_KEYS.length; step++) {
-        const candidate = MOTIF_KEYS[(start + step) % MOTIF_KEYS.length]
-        if (!used.has(candidate)) {
-          motif = candidate
-          break
-        }
+    const base = MOTIF_KEYS.indexOf(motifFor(key))
+    const start = (base + shift + MOTIF_KEYS.length) % MOTIF_KEYS.length
+    for (let step = 0; step < MOTIF_KEYS.length; step++) {
+      const candidate = MOTIF_KEYS[(start + step) % MOTIF_KEYS.length]
+      if (!used.has(candidate)) {
+        used.add(candidate)
+        return candidate
       }
     }
-    used.add(motif)
-    return motif
+    return MOTIF_KEYS[start]
   })
 }
 

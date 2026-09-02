@@ -308,10 +308,12 @@ Tokens live in `src/styles/tokens.css`; nothing hard-codes a colour.
 They are not the same thing, and the difference is deliberate — both follow
 [Kage](https://mengto.github.io/kage/).
 
-**Homepage — "02 Still Gardens".** A lead card carrying the flagship item with the next two
-stacked beside it in a narrower column. Cards are separate objects: real gaps, a 10px radius,
-artwork filling each card with the title laid over its bottom edge and the mono meta sitting
-outside beneath it. Hover tilts the media only, so the small type below stays crisp.
+**Homepage — "02 Still Gardens".** Separate cards with real gaps and a soft radius. Each
+section arranges its three differently, set by `stripLayout` in the section registry, so
+scrolling the page does not read as the same block four times: a wide lead beside a narrow
+stack, the same mirrored, three equal columns, and a wide lead above a pair. Motifs are
+chosen per section as well as per card, so no two sections land on the same trio. Artwork fills each card with the title laid over its bottom edge
+and the mono meta sitting outside beneath it. Hover tilts the media only, so the small type below stays crisp.
 
 **Sections and CTF — "03 Sacred Craft".** One connected block. Cells share 1px hairlines with
 **zero gaps and zero border-radius**, and hover states are always **inset** — an inset ring

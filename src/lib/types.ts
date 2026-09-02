@@ -80,6 +80,12 @@ export interface ItemDetail {
   tags: string[]
 }
 
+/**
+ * How a section arranges its three homepage cards. Every section gets its own,
+ * so scrolling the page does not read as the same block four times over.
+ */
+export type StripLayout = 'lead-left' | 'lead-right' | 'even' | 'lead-top'
+
 export interface SectionMeta {
   key: SectionKey
   /** Chapter number used by the eyebrow and survey label, e.g. `02`. */
@@ -95,6 +101,8 @@ export interface SectionMeta {
   blurb: string
   /** Payload collection this section reads. */
   collection: 'projects' | 'experiences' | 'organizations' | 'awards'
+  /** Arrangement of this section's homepage card group. */
+  stripLayout: StripLayout
 }
 
 export interface CtfChallengeItem {

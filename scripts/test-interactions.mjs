@@ -388,6 +388,43 @@ const run = async () => {
     )
     check('strip cards do not repeat a motif', motifCount === 3, String(motifCount))
 
+    /*
+     * Each section arranges its cards differently, so scrolling the page does
+     * not read as the same block four times over. Layouts are compared by the
+     * widths they actually produce, not just by the attribute.
+     */
+    const groups = await page.evaluate(() =>
+      ['projects', 'experience', 'organizations', 'awards'].map((id) => {
+        const group = document.querySelector(`#${id} [data-layout]`)
+        const box = group.getBoundingClientRect()
+        return {
+          id,
+          layout: group.dataset.layout,
+          shape: [...group.querySelectorAll('article')]
+            .map((c) => Math.round((c.getBoundingClientRect().width / box.width) * 100))
+            .join('/'),
+          motifs: [...group.querySelectorAll('article')]
+            .map((c) => c.querySelector('svg path')?.getAttribute('d')?.slice(0, 24) ?? 'img')
+            .join('|'),
+        }
+      }),
+    )
+    check(
+      'every section declares its own layout',
+      new Set(groups.map((g) => g.layout)).size === 4,
+      groups.map((g) => g.layout).join(', '),
+    )
+    check(
+      'and those layouts produce different shapes',
+      new Set(groups.map((g) => g.shape)).size >= 3,
+      groups.map((g) => `${g.id}:${g.shape}`).join('  '),
+    )
+    check(
+      'no two sections share a motif set',
+      new Set(groups.map((g) => g.motifs)).size === 4,
+      String(new Set(groups.map((g) => g.motifs)).size),
+    )
+
     // Perspective lives on each grid that holds cards, or the stacked pair
     // stays flat while only the lead tilts.
     const perspectives = await page.evaluate(() => {

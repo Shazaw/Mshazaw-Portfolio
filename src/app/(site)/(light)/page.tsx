@@ -58,7 +58,12 @@ const Home = async () => {
         heading={section.heading}
         blurb={section.blurb}
       >
-        <CardStrip items={items} route={section.route} />
+        <CardStrip
+          items={items}
+          route={section.route}
+          layout={section.stripLayout}
+          motifSeed={section.key}
+        />
         <Reveal>
           <EnterButton href={section.route} label={`Enter ${section.label} grid`} />
         </Reveal>

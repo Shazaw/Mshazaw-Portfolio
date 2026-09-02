@@ -17,6 +17,7 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     heading: 'Selected work',
     blurb: 'Pinned work right now, check out the projects tab for the full list.',
     collection: 'projects',
+    stripLayout: 'lead-left',
   },
   experience: {
     key: 'experience',
@@ -27,6 +28,7 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     heading: 'Professional Experience',
     blurb: 'Startup development, client consulting, and penetration testing.',
     collection: 'experiences',
+    stripLayout: 'lead-right',
   },
   organizations: {
     key: 'organizations',
@@ -37,6 +39,7 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     heading: 'Organizations I put my time in',
     blurb: 'Software houses, teaching cybersecurity, and student bodies.',
     collection: 'organizations',
+    stripLayout: 'even',
   },
   awards: {
     key: 'awards',
@@ -47,6 +50,7 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     heading: 'Marks on the board',
     blurb: 'Competitions, placements and recognitions.',
     collection: 'awards',
+    stripLayout: 'lead-top',
   },
 }
 

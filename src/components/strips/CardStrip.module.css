@@ -23,9 +23,48 @@
   align-items: start;
 }
 
-/* Three items: the Kage proportion — a wide lead beside a narrow stack. */
-.gardens[data-count='3'] {
+/*
+ * Four arrangements, one per section, so scrolling the homepage does not read
+ * as the same block four times. All of them keep the Still-Gardens character:
+ * separate cards, real gaps, a soft radius.
+ */
+
+/* lead-left — the Kage proportion: a wide lead beside a narrow stack. */
+.gardens[data-layout='lead-left'][data-count='3'] {
   grid-template-columns: 2.05fr 1fr;
+}
+
+/* lead-right — the same, mirrored, so the eye enters from the other side. */
+.gardens[data-layout='lead-right'][data-count='3'] {
+  grid-template-columns: 1fr 2.05fr;
+}
+
+.gardens[data-layout='lead-right'] .lead {
+  order: 2;
+}
+
+.gardens[data-layout='lead-right'] .side {
+  order: 1;
+}
+
+/* even — three equal columns, no lead at all. */
+.gardens[data-layout='even'][data-count='3'] {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* lead-top — a wide lead across the top, the pair side by side beneath it. */
+.gardens[data-layout='lead-top'] {
+  grid-template-columns: 1fr;
+}
+
+.gardens[data-layout='lead-top'] .side {
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr 1fr;
+}
+
+.gardens[data-layout='lead-top'] .lead .media {
+  /* Wider than the standard lead, since it now spans the whole column. */
+  aspect-ratio: 21 / 9;
 }
 
 .gardens[data-count='2'] {
@@ -86,8 +125,14 @@
   flex: none;
 }
 
-.sideCard .media {
+.sideCard .media,
+.gardens[data-layout='even'] .media {
   aspect-ratio: 3 / 2;
+}
+
+/* With no lead, all three titles sit at the same size. */
+.gardens[data-layout='even'] .lead .title {
+  font-size: 22px;
 }
 
 .card:hover .media,
@@ -343,15 +388,29 @@
 }
 
 @media (max-width: 860px) {
+  /* Every arrangement collapses to one column on a phone. */
   .gardens,
-  .gardens[data-count='3'],
+  .gardens[data-layout],
+  .gardens[data-layout][data-count='3'],
   .gardens[data-count='2'] {
     grid-template-columns: 1fr;
     perspective: none;
   }
 
-  .side {
+  .side,
+  .gardens[data-layout='lead-top'] .side {
     grid-template-rows: auto auto;
+    grid-template-columns: 1fr;
+    perspective: none;
+  }
+
+  .gardens[data-layout='lead-right'] .lead,
+  .gardens[data-layout='lead-right'] .side {
+    order: 0;
+  }
+
+  .gardens[data-layout='lead-top'] .lead .media {
+    aspect-ratio: 3 / 2;
   }
 
   .lead .media {
