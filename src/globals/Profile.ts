@@ -176,7 +176,7 @@ export const Profile: GlobalConfig = {
               type: 'textarea',
               maxLength: 200,
               defaultValue:
-                'Portfolio of M. Ahsan Zaki Wiryawan — computer science undergraduate at UGM, cybersecurity concentration.',
+                'Portfolio of M. Ahsan Zaki Wiryawan, computer science undergraduate at UGM with a cybersecurity concentration.',
             },
             { name: 'ogImage', type: 'upload', relationTo: 'media' },
           ],

@@ -20,9 +20,9 @@ export const fullDate = (value?: string | null): string | null => {
 export const periodLabel = (start?: string | null, end?: string | null, current?: boolean | null): string | null => {
   const from = monthYear(start)
   if (!from) return null
-  if (current) return `${from} — PRESENT`
+  if (current) return `${from} - PRESENT`
   const to = monthYear(end)
-  return to && to !== from ? `${from} — ${to}` : from
+  return to && to !== from ? `${from} - ${to}` : from
 }
 
 export const pad2 = (n: number): string => String(n).padStart(2, '0')

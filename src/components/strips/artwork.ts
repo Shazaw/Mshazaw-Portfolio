@@ -236,16 +236,51 @@ const MOTIFS: Record<string, (rnd: () => number) => ArtworkLayers> = {
 
 export const MOTIF_KEYS = Object.keys(MOTIFS)
 
+/** The motif a key resolves to, without building the geometry. */
+export const motifFor = (key: string): string => {
+  if (!key.startsWith('auto:')) return key
+  const slug = key.slice(5)
+  const rnd = seededRandom(slug || 'holo-grid')
+  return MOTIF_KEYS[Math.floor(rnd() * MOTIF_KEYS.length) % MOTIF_KEYS.length]
+}
+
+/**
+ * Picks motifs for a set of cards shown side by side, so no two repeat.
+ *
+ * Each card's motif is seeded from its own slug, which is stable but says
+ * nothing about its neighbours — three cards in a strip could all land on the
+ * same one, and a row of identical drawings is tiring to look at. Collisions
+ * step to the next unused motif, deterministically and in order.
+ */
+export const distinctMotifs = (keys: string[]): string[] => {
+  const used = new Set<string>()
+  return keys.map((key) => {
+    let motif = motifFor(key)
+    if (used.has(motif)) {
+      const start = MOTIF_KEYS.indexOf(motif)
+      for (let step = 1; step <= MOTIF_KEYS.length; step++) {
+        const candidate = MOTIF_KEYS[(start + step) % MOTIF_KEYS.length]
+        if (!used.has(candidate)) {
+          motif = candidate
+          break
+        }
+      }
+    }
+    used.add(motif)
+    return motif
+  })
+}
+
 /**
  * `key` is either an explicit motif name or `auto:<slug>`, in which case the
- * motif itself is chosen deterministically from the slug.
+ * motif itself is chosen deterministically from the slug. Pass `motif` to
+ * override that choice while keeping the slug as the geometry seed.
  */
-export const buildArtwork = (key: string): ArtworkLayers => {
+export const buildArtwork = (key: string, motif?: string): ArtworkLayers => {
   const auto = key.startsWith('auto:')
   const seedSource = auto ? key.slice(5) : key
-  const rnd = seededRandom(seedSource || 'holo-grid')
-  const motif = auto ? MOTIF_KEYS[Math.floor(rnd() * MOTIF_KEYS.length) % MOTIF_KEYS.length] : key
-  const build = MOTIFS[motif] ?? MOTIFS.skyline
+  const chosen = motif ?? motifFor(key)
+  const build = MOTIFS[chosen] ?? MOTIFS.skyline
   // Re-seed so the chosen motif always starts from the same stream position.
-  return build(seededRandom(`${seedSource}:${motif}`))
+  return build(seededRandom(`${seedSource}:${chosen}`))
 }

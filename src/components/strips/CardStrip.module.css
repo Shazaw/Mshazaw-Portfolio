@@ -36,11 +36,17 @@
   grid-template-columns: 1fr;
 }
 
+/*
+ * The stacked pair needs its own perspective. `perspective` only applies to an
+ * element's direct children, so with it declared on `.gardens` alone the lead
+ * card tilted and these two, being grandchildren, stayed flat.
+ */
 .side {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 24px;
   min-width: 0;
+  perspective: 1400px;
 }
 
 .gardens[data-count='2'] .side {

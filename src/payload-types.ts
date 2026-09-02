@@ -155,7 +155,7 @@ export interface Project {
    */
   category: string;
   /**
-   * Optional. When it shipped, to the month — shown as e.g. AUG 2026.
+   * Optional. When it shipped, to the month. Shown as e.g. AUG 2026.
    */
   date?: string | null;
   /**
@@ -197,7 +197,7 @@ export interface Project {
    */
   liveUrl?: string | null;
   /**
-   * Your part in it, when it needs saying — e.g. Security engineer, IT manager.
+   * Your part in it, when it needs saying. For example Security engineer, IT manager.
    */
   role?: string | null;
   /**
@@ -214,7 +214,7 @@ export interface Project {
       }[]
     | null;
   /**
-   * Optional. A real screenshot of the running project — shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.
+   * Optional. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.
    */
   screenshot?: (number | null) | Media;
   /**

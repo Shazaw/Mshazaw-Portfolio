@@ -31,13 +31,13 @@ export const experiences = [
       'Lead two security engineers across the AI features and the encrypted chat path.',
     ],
     description: prose(
-      'Sanct Social treats its privacy guarantees as a feature rather than a footnote, which means the cryptography is not a layer bolted on at the end — it decides what the product can and cannot offer.',
+      'Sanct Social treats its privacy guarantees as a feature rather than a footnote, which means the cryptography is not a layer bolted on at the end. It decides what the product can and cannot offer.',
       'My remit is the encryption layer and the security backend beneath it: the end-to-end path carrying user-to-user chat, and a keyed-verification anonymous credential scheme that lets a member prove group membership without disclosing who else belongs. I lead two security engineers, split between the AI features and the encrypted chat path.',
     ),
     links: [],
   },
   {
-    title: 'Project Analyst & IT Manager',
+    title: 'Project Analyst',
     slug: 'project-analyst-180dc-ugm',
     organization: '180 Degrees Consulting UGM',
     location: 'Yogyakarta, ID',
@@ -46,7 +46,7 @@ export const experiences = [
     current: true,
     employmentType: 'part-time',
     summary:
-      'Client consulting for an e-commerce business — competitor-intelligence tooling, search visibility, analytics and a UX pass — alongside running the chapter’s own web platform.',
+      'Client consulting for an e-commerce business: competitor-intelligence tooling, search visibility, analytics and a UX pass.',
     subtag: 'STRATEGY',
     tags: ['Consulting', 'Web Scraping', 'Python', 'SEO', 'GA4 Analytics', 'UI/UX'],
     weight: 5,
@@ -58,11 +58,10 @@ export const experiences = [
       'Rebuilt the storefront’s search visibility through on-page SEO.',
       'Instrumented GA4 so the funnel could be measured instead of guessed at.',
       'Redesigned the interface around what that instrumentation actually showed.',
-      'As IT manager, preside over every initiative running through the chapter website.',
     ],
     description: prose(
       'Client work under 180 Degrees Consulting UGM, the student-run consultancy that takes on organisations who could not otherwise afford the help. The commercial specifics stay with the client; what I can describe is what I built.',
-      'Competitor intelligence was the first gap — nobody had a view of what the rest of the category charged or claimed — so I wrote a scraper to turn that into something comparable. The rest was making the storefront legible to search engines and to people: on-page SEO, GA4 instrumentation so the funnel could be measured, and a UX pass driven by what the numbers showed rather than by taste.',
+      'Competitor intelligence was the first gap, since nobody had a view of what the rest of the category charged or claimed, so I wrote a scraper to turn that into something comparable. The rest was making the storefront legible to search engines and to people: on-page SEO, GA4 instrumentation so the funnel could be measured, and a UX pass driven by what the numbers showed rather than by taste.',
     ),
     links: [],
   },
@@ -104,7 +103,7 @@ export const experiences = [
     current: true,
     employmentType: 'assistantship',
     summary:
-      'Second cohort of the penetration-testing track — designed the curriculum and its labs, and mentored students through them alongside a practitioner from industry.',
+      'Second cohort of the penetration-testing track. I designed the curriculum and its labs, and mentor students through them alongside a practitioner from industry.',
     subtag: 'TEACHING',
     tags: ['Curriculum Design', 'Lab Engineering', 'Penetration Testing', 'Mentoring'],
     weight: 4,
@@ -116,7 +115,7 @@ export const experiences = [
       'Co-taught with a practitioner working in the field, and mentored students through the material.',
     ],
     description: prose(
-      'The security track of OmahTI Academy, back for a second cohort. I design the curriculum and build the environments it runs on — teaching labs and assessment labs kept deliberately separate, because demonstrating a technique and testing whether it landed are not the same exercise.',
+      'The security track of OmahTI Academy, back for a second cohort. I design the curriculum and build the environments it runs on, keeping teaching labs and assessment labs deliberately separate, because demonstrating a technique and testing whether it landed are not the same exercise.',
       'Teaching alongside someone doing the work professionally keeps the material honest about the job rather than the syllabus. The rest is mentoring: sitting with students while they are stuck, which is where most of the learning actually happens.',
     ),
     links: [],
@@ -165,7 +164,7 @@ export const experiences = [
     featured: false,
     mosaicSpan: 'auto',
     highlights: [
-      'Person in charge of the competition — format, infrastructure, timeline and the room on the day.',
+      'Person in charge of the competition: format, infrastructure, timeline and the room on the day.',
       'Authored part of the challenge set.',
       'Tuned the difficulty curve so newer teams could get on the board and strong ones still had somewhere to go.',
     ],
@@ -186,7 +185,7 @@ export const organizations = [
     endDate: null,
     current: true,
     summary:
-      'UGM’s information-technology student organisation. Head of the cybersecurity division, after two years through its competition and security tracks.',
+      'UGM’s information technology student organisation. Head of the cybersecurity division, after two years through its competition and security tracks.',
     subtag: 'SECURITY',
     tags: ['Cybersecurity', 'CTF', 'Competition Research', 'Mentoring'],
     weight: 5,
@@ -194,14 +193,13 @@ export const organizations = [
     featuredOrder: 1,
     mosaicSpan: '4',
     highlights: [
-      'Head of the cybersecurity division since January 2026.',
-      'Top-30 finishes across five or more national and international CTFs as division staff.',
-      'Mobilised 20+ prospective Computer Science teams for GELATIK 2025, then built the preparatory programme that readied them.',
-      'The standing resource for members entering academic competitions and research projects.',
+      'Head of Cybersecurity Division, Jan 2026 to present.',
+      'Junior Staff, Research and Competition, Jan 2025 to Jan 2026.',
+      'Junior Staff, Cybersecurity Division, Dec 2024 to Jan 2026.',
     ],
     description: prose(
-      'Organisasi Mahasiswa Ahli Teknologi Informasi — UGM’s IT student organisation. I came in through the cybersecurity division on weekly CTF training, specialising in web exploitation, digital forensics and binary exploitation, and competing across national and international events.',
-      'In parallel I ran research and competition: reaching the Faculty of Mathematics and Natural Sciences ahead of GELATIK 2025, mobilising more than twenty prospective teams, then designing the preparatory programme — materials, past-paper analysis, competition insight — that got them ready. Since January 2026 I have led the cybersecurity division.',
+      'Organisasi Mahasiswa Ahli Teknologi Informasi, UGM’s IT student organisation. I came in through the cybersecurity division on weekly CTF training, specialising in web exploitation, digital forensics and binary exploitation, and competing across national and international events with consistent top 30 finishes.',
+      'In parallel I ran research and competition: reaching the Faculty of Mathematics and Natural Sciences ahead of GELATIK 2025, mobilising more than twenty prospective teams, then designing the preparatory programme of materials, past paper analysis and competition insight that got them ready. Since January 2026 I have led the cybersecurity division.',
     ),
     links: [],
   },
@@ -221,13 +219,58 @@ export const organizations = [
     featuredOrder: 2,
     mosaicSpan: 'auto',
     highlights: [
-      'Head of the ASGama cybersecurity division since January 2026.',
-      'Top 4 in the Liga Komatik competition as a core team member.',
-      'Teach core CTF material — forensics, web exploitation, reverse engineering, cryptography — in weekly training.',
+      'Head of Cybersecurity Division (ASGama), Jan 2026 to present.',
+      'Junior Staff, Cybersecurity Division (ASGama), Nov 2024 to Jan 2026.',
     ],
     description: prose(
-      'Komunitas Mahasiswa TIK, UGM’s ICT student community. I joined the ASGama cybersecurity division as junior staff, contributing to weekly training and teaching the core CTF categories — forensics, web exploitation, reverse engineering and cryptography — to members building the same skills.',
+      'Komunitas Mahasiswa TIK, UGM’s ICT student community. I joined the ASGama cybersecurity division as junior staff, contributing to weekly training and teaching the core CTF categories of forensics, web exploitation, reverse engineering and cryptography to members building the same skills.',
       'The competition side ran alongside it: a Top 4 placement in Liga Komatik as part of the core team, and the intensive preparation for GELATIK. I have led the division since January 2026.',
+    ),
+    links: [],
+  },
+  {
+    title: '180 Degrees Consulting UGM',
+    slug: '180dc-ugm',
+    role: 'IT Manager',
+    startDate: '2026-02-01',
+    endDate: null,
+    current: true,
+    summary:
+      'The UGM chapter of the world’s largest student-led consultancy for non-profits and social enterprises. IT manager for the chapter platform.',
+    subtag: 'IT LEAD',
+    tags: ['Web Platform', 'Content Ops', 'Recruitment Systems', 'Analytics'],
+    weight: 4,
+    featured: true,
+    featuredOrder: 3,
+    mosaicSpan: 'auto',
+    highlights: [
+      'IT Manager, Jul 2026 to present.',
+      'Project Analyst, Feb 2026 to present.',
+      'Oversaw an open recruitment cycle carrying 300+ applicants through the chapter site.',
+    ],
+    description: prose(
+      'The UGM chapter of 180 Degrees Consulting, which takes on clients who could not otherwise afford consulting. I joined as a project analyst on client engagements and took on the IT manager role in July 2026.',
+      'As IT manager I preside over every initiative that runs through the chapter website: the public storefront for the consultancy, the content around it, and the open recruitment cycle that carried more than three hundred applicants through intake, staged flow and timeline.',
+    ),
+    links: [],
+  },
+  {
+    title: 'BEM KM UGM',
+    slug: 'bem-km-ugm',
+    role: 'Security Engineer, Research & Development',
+    startDate: '2025-09-01',
+    endDate: '2026-02-01',
+    current: false,
+    summary:
+      'The student executive board of UGM. Security engineer within the research and development department for the 2025 cabinet.',
+    subtag: 'SECURITY',
+    tags: ['Cybersecurity', 'Penetration Testing', 'Research & Development'],
+    weight: 3,
+    featured: false,
+    mosaicSpan: 'auto',
+    highlights: ['Security Engineer, Department of Research and Development, Sep 2025 to Feb 2026.'],
+    description: prose(
+      'Badan Eksekutif Mahasiswa Keluarga Mahasiswa UGM, the university’s student executive board. I sat in the research and development department as its security engineer for the 2025 cabinet, where the assessment of the board’s own platform came out of the role.',
     ),
     links: [],
   },
@@ -241,19 +284,18 @@ export const organizations = [
     summary:
       'Global youth leadership organisation. Ran quality control for outgoing volunteers, then vice-presided over programme and partnership at the alumni gathering.',
     subtag: 'OPERATIONS',
-    tags: ['Programme Operations', 'CRM', 'Customer Experience', 'Partnerships', 'Marketing'],
+    tags: ['Programme Operations', 'CRM', 'Customer Experience', 'Partnerships'],
     weight: 3,
-    featured: true,
-    featuredOrder: 3,
+    featured: false,
     mosaicSpan: 'auto',
     highlights: [
-      'Organising committee vice president for programme and partnership at the alumni gathering.',
-      'Owned the end-to-end outbound journey for exchange participants on global volunteering projects.',
-      'Built and refined an automated communication workflow reaching 1,000+ prospective participants.',
-      'Ran on-ground campaigns across Yogyakarta high schools and the UGM campus.',
+      'OC Vice President, Program & Partnership, Alumni Gathering, Sep 2025 to Feb 2026.',
+      'Assessor, Join AIESEC in UGM 2025, Jul 2025.',
+      'Quality Control & Customer Experience Staff, Outgoing Global Volunteer, Jan 2025 to Feb 2026.',
+      'Intern, Outgoing Global Volunteer, Oct 2024 to Jan 2025.',
     ],
     description: prose(
-      'AIESEC’s local committee at UGM. I started as an intern on outgoing global volunteer, learning the exchange workflow end to end — project matching, participant support, quality assurance — then took it on as quality control and customer experience staff.',
+      'AIESEC’s local committee at UGM. I started as an intern on outgoing global volunteer, learning the exchange workflow end to end through project matching, participant support and quality assurance, then took it on as quality control and customer experience staff.',
       'That meant being the first point of contact for prospective exchange participants, owning their outbound journey against the quality standard, and refining an automated communication workflow that carried more than a thousand prospects through it. Later I served as organising committee vice president for programme and partnership at the alumni gathering, and as an assessor for the 2025 intake.',
     ),
     links: [],
@@ -279,7 +321,7 @@ export const organizations = [
 
 export const awards = [
   {
-    title: 'PsychCTF 2026 — 1st Place',
+    title: 'PsychCTF 2026',
     slug: 'psychctf-2026-first-place',
     issuer: 'SAIC, IIT Mandi',
     placement: '1ST PLACE',
@@ -296,7 +338,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'ApoorvCTF 2026 — 2nd Place',
+    title: 'ApoorvCTF 2026',
     slug: 'apoorvctf-2026-second-place',
     issuer: 'ApoorvCTF, IIIT Kottayam',
     placement: '2ND PLACE',
@@ -313,7 +355,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'Garuda Hacks 7.0 — Top 15% Submissions',
+    title: 'Garuda Hacks 7.0',
     slug: 'garuda-hacks-7-top-15',
     issuer: 'UMN Garuda Hacks',
     placement: 'TOP 15%',
@@ -330,7 +372,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'FindIT 2026 CTF — Finalist',
+    title: 'FindIT 2026 CTF',
     slug: 'findit-2026-ctf-finalist',
     issuer: 'FindIT UGM',
     placement: 'FINALIST',
@@ -346,7 +388,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'DCSE Summer Course — Honorable Mention',
+    title: 'DCSE Summer Course',
     slug: 'dcse-summer-course-honorable-mention',
     issuer: 'Universitas Gadjah Mada',
     placement: 'HONORABLE MENTION',
@@ -362,7 +404,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'Techcomfest CTF 2025 — Finalist',
+    title: 'Techcomfest CTF 2025',
     slug: 'techcomfest-ctf-2025-finalist',
     issuer: 'Techcomfest PCC',
     placement: 'FINALIST',
@@ -378,7 +420,7 @@ export const awards = [
     links: [],
   },
   {
-    title: 'Healthkathon CTF 2025 — Finalist',
+    title: 'Healthkathon CTF 2025',
     slug: 'healthkathon-ctf-2025-finalist',
     issuer: 'BPJS Kesehatan',
     placement: 'FINALIST',
@@ -402,10 +444,10 @@ export const profileSeed = {
   heroLineTwo: 'WIRYAWAN',
   heroAccentWord: 'AHSAN',
   tagline:
-    'Computer science undergraduate at UGM. Cybersecurity concentration — CTF player, encryption engineer, and occasional consultant.',
+    'Computer science undergraduate at UGM, cybersecurity concentration. CTF player, encryption engineer, and occasional consultant.',
   role: 'CS undergraduate · cybersecurity',
   aboutIntro:
-    'I build things that have to hold up when someone is actively trying to break them — encryption layers, red-team tooling, and the occasional consulting engagement where the real problem turns out to be the infrastructure nobody documented.',
+    'I build things that have to hold up when someone is actively trying to break them: encryption layers, red-team tooling, and the occasional consulting engagement where the real problem turns out to be the infrastructure nobody documented.',
   email: 'ahsan.wiryawan@gmail.com',
   location: 'Yogyakarta, ID',
   coordinates: "07°46′S 110°22′E · UGM",
@@ -414,7 +456,7 @@ export const profileSeed = {
       'Computer science undergraduate at Universitas Gadjah Mada, concentrating in cybersecurity. Most of my time goes to three things: applied cryptography, capture-the-flag on both sides of the board, and consulting engagements where the deliverable is a decision rather than a codebase.',
     ),
     paragraph(
-      'Right now that means leading the security engineering at Sanct Social — the end-to-end encryption layer and the credential scheme behind its group privacy — while heading the cybersecurity divisions at OmahTI and KOMATIK, and designing the penetration-testing curriculum that OmahTI Academy teaches from.',
+      'Right now that means leading the security engineering at Sanct Social, covering the end-to-end encryption layer and the credential scheme behind its group privacy, while heading the cybersecurity divisions at OmahTI and KOMATIK and designing the penetration-testing curriculum that OmahTI Academy teaches from.',
     ),
     paragraph(
       'The through-line is the same everywhere. A system is only as good as its worst assumption, and most of the work is finding out which assumption that is before somebody else does.',
@@ -423,7 +465,7 @@ export const profileSeed = {
   focusAreas: [
     {
       title: 'Applied cryptography',
-      body: 'Protocol implementation and review — X3DH, Double Ratchet, AEAD constructions, and the state machines that hold them together.',
+      body: 'Protocol implementation and review: X3DH, Double Ratchet, AEAD constructions, and the state machines that hold them together.',
       tag: 'CRYPTO',
     },
     {
@@ -446,9 +488,15 @@ export const profileSeed = {
   education: [
     {
       institution: 'Universitas Gadjah Mada',
-      program: 'BSc Computer Science — cybersecurity concentration',
-      period: '2023 — present',
+      program: 'BSc Computer Science',
+      period: '2023 to present',
       detail: 'Yogyakarta',
+    },
+    {
+      institution: 'Jeonbuk National University',
+      program: 'Computer Science and Artificial Intelligence',
+      period: 'Sep 2026 to Dec 2026',
+      detail: 'Exchange student, Jeonju',
     },
   ],
   socials: [
@@ -457,5 +505,5 @@ export const profileSeed = {
   ],
   siteTitle: 'M. Ahsan Zaki Wiryawan',
   siteDescription:
-    'Portfolio of M. Ahsan Zaki Wiryawan — computer science undergraduate at UGM, cybersecurity concentration. Encryption engineering, CTF, and systems consulting.',
+    'Portfolio of M. Ahsan Zaki Wiryawan, computer science undergraduate at UGM with a cybersecurity concentration. Encryption engineering, CTF, and systems consulting.',
 } as const

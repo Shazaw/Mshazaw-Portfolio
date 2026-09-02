@@ -105,6 +105,14 @@ socials, CV link, and SEO defaults.
 
 ---
 
+## Parked sections
+
+The CTF area is finished but switched off while the rest of the site is built, because its
+content is still placeholder. Its routes live in `src/parked/ctf-routes`; the schema, views,
+queries and seed all stay in the tree untouched, so any data already entered survives and
+`/admin` still edits it. `CTF_ENABLED` in `src/lib/features.ts` controls the navbar entry,
+the homepage chapter and the sitemap. `src/parked/README.md` has the restore steps.
+
 ## The homepage journey
 
 One procedural Three.js scene, three acts, driven entirely by scroll:

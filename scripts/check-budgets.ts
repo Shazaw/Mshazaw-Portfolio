@@ -72,8 +72,8 @@ const run = async () => {
   for (const [route, settle] of [
     ['/', 3000],
     ['/projects', 4000],
-    ['/ctf', 800],
-    ['/ctf/cyber-jawara-national', 800],
+    ['/experience', 4000],
+    ['/awards', 4000],
   ] as [string, number][]) {
     const context = await browser.newContext()
     const page = await context.newPage()

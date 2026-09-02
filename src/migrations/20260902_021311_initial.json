@@ -3704,7 +3704,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'Portfolio of M. Ahsan Zaki Wiryawan — computer science undergraduate at UGM, cybersecurity concentration.'"
+          "default": "'Portfolio of M. Ahsan Zaki Wiryawan, computer science undergraduate at UGM with a cybersecurity concentration.'"
         },
         "og_image_id": {
           "name": "og_image_id",
@@ -3874,6 +3874,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "14ec0dc4-8ad1-4192-8421-5e9ebe98cc9b",
+  "id": "e0faf3c5-e5fc-42ba-8e2d-9adb4bfc8d72",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

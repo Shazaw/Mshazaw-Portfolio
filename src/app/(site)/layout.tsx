@@ -9,7 +9,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
   const title = profile.siteTitle || profile.name
   const description =
     profile.siteDescription ||
-    `Portfolio of ${profile.name}${profile.role ? ` — ${profile.role}` : ''}.`
+    `Portfolio of ${profile.name}${profile.role ? `, ${profile.role}` : ''}.`
 
   return {
     metadataBase: new URL(base),

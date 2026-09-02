@@ -6,7 +6,7 @@ import { CardStrip } from '@/components/strips/CardStrip'
 import { EnterButton } from '@/components/ui/EnterButton'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { RichText } from '@payloadcms/richtext-lexical/react'
-import { getCtfStats, getFeaturedItems, getProfile, getSectionItems } from '@/lib/data'
+import { getFeaturedItems, getProfile, getSectionItems } from '@/lib/data'
 import { SECTIONS } from '@/lib/sections'
 import type { SectionKey } from '@/lib/types'
 
@@ -31,7 +31,7 @@ const heroLine = (line: string, accent: string | null | undefined, strokeClass: 
 }
 
 const Home = async () => {
-  const [profile, ctf] = await Promise.all([getProfile(), getCtfStats()])
+  const profile = await getProfile()
 
   const strips = await Promise.all(
     STRIP_SECTIONS.map(async (key) => ({
@@ -76,7 +76,7 @@ const Home = async () => {
       <HomeScene />
 
       <main id="main" className={styles.main}>
-        {/* 00 — HELLO */}
+        {/* 00 HELLO */}
         <section className={`${styles.chapter} ${styles.hero}`}>
           <Eyebrow>00 · Hello · {profile.location ?? 'Yogyakarta, ID'}</Eyebrow>
           <h1 className={styles.title}>
@@ -91,8 +91,8 @@ const Home = async () => {
           </div>
         </section>
 
-        {/* 01 — ABOUT. The whole of it: there is no separate page. */}
-        <Chapter id="about" eyebrow="01 · About" heading="Who is surveying">
+        {/* 01 ABOUT. The whole of it: there is no separate page. */}
+        <Chapter id="about" eyebrow="01 · About" heading="Whoami">
           {profile.aboutIntro ? <p className={styles.aboutLead}>{profile.aboutIntro}</p> : null}
           {profile.about ? (
             <div className={styles.aboutProse}>
@@ -136,37 +136,11 @@ const Home = async () => {
         {stripChapter('experience')}
         {stripChapter('organizations')}
 
-        {/* 05 — CTF */}
-        <Chapter
-          id="ctf"
-          eyebrow="05 · CTF · Capture the flag"
-          heading="Flags, both sides of the board"
-          blurb="Solved as a player, authored as an organiser. Both are logged."
-        >
-          <Reveal>
-            <div className={styles.statrow}>
-              <div>
-                <div className={styles.statNum}>{ctf.solved}</div>
-                <div className={styles.statLabel}>Challenges solved</div>
-              </div>
-              <div>
-                <div className={`${styles.statNum} ${styles.statNumOutlined}`}>{ctf.authored}</div>
-                <div className={styles.statLabel}>Challenges authored</div>
-              </div>
-              <div>
-                <div className={styles.statNum}>{ctf.podiums}</div>
-                <div className={styles.statLabel}>Podiums &amp; finals</div>
-              </div>
-            </div>
-            <EnterButton href="/ctf" label="Enter CTF grid" />
-          </Reveal>
-        </Chapter>
-
         {stripChapter('awards')}
 
-        {/* 07 — TOOLKIT, the last thing before the footer. */}
+        {/* 06 TOOLKIT, the last thing before the footer. */}
         {skills.length > 0 ? (
-          <Chapter id="toolkit" eyebrow="07 · Toolkit · What it is built with">
+          <Chapter id="toolkit" eyebrow="06 · Toolkit · What it is built with">
             <Reveal>
               <div className={styles.skillGrid}>
                 {skills.map((group) => (

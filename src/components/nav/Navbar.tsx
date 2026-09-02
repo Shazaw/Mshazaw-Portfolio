@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Monogram } from '@/components/ui/Monogram'
+import { CTF_ENABLED } from '@/lib/features'
 import styles from './Navbar.module.css'
 
 export interface NavLinkDef {
@@ -17,7 +18,7 @@ export const NAV_LINKS: NavLinkDef[] = [
   { label: 'Projects', href: '/projects' },
   { label: 'Experience', href: '/experience' },
   { label: 'Orgs', href: '/organizations' },
-  { label: 'CTF', href: '/ctf' },
+  ...(CTF_ENABLED ? [{ label: 'CTF', href: '/ctf' }] : []),
   { label: 'Awards', href: '/awards' },
 ]
 

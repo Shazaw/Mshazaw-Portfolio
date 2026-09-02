@@ -51,7 +51,7 @@ export const Projects: CollectionConfig = {
           type: 'date',
           admin: {
             width: '50%',
-            description: 'Optional. When it shipped, to the month — shown as e.g. AUG 2026.',
+            description: 'Optional. When it shipped, to the month. Shown as e.g. AUG 2026.',
             date: { pickerAppearance: 'monthOnly', displayFormat: 'MMM yyyy' },
           },
         },
@@ -106,7 +106,7 @@ export const Projects: CollectionConfig = {
     {
       name: 'role',
       type: 'text',
-      admin: { description: 'Your part in it, when it needs saying — e.g. Security engineer, IT manager.' },
+      admin: { description: 'Your part in it, when it needs saying. For example Security engineer, IT manager.' },
     },
     linksField,
     {
@@ -115,7 +115,7 @@ export const Projects: CollectionConfig = {
       relationTo: 'media',
       admin: {
         description:
-          'Optional. A real screenshot of the running project — shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.',
+          'Optional. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.',
       },
     },
     {

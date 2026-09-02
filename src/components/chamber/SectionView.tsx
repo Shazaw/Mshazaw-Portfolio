@@ -386,7 +386,7 @@ export const SectionView = ({
         <ul className="srOnly">
           {items.map((item) => (
             <li key={item.id}>
-              {item.title} — {item.summary} ({item.year})
+              {item.title}. {item.summary} ({item.year})
             </li>
           ))}
         </ul>
@@ -398,7 +398,7 @@ export const SectionView = ({
             Sec {section.num} · {section.label} · Card view
           </Eyebrow>
           {timedOut ? (
-            <p className={styles.notice}>Grid unavailable on this device — showing cards.</p>
+            <p className={styles.notice}>Grid unavailable on this device. Showing cards.</p>
           ) : null}
         </div>
         <Mosaic

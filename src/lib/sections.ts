@@ -2,8 +2,10 @@ import type { SectionKey, SectionMeta } from './types'
 
 /**
  * Single source of truth for the four chambered sections.
- * Chapter numbers follow the homepage journey (§5): 00 hello, 01 about,
- * 02 projects, 03 experience, 04 organizations, 05 ctf, 06 awards.
+ * Chapter numbers follow the homepage journey: 00 hello, 01 about,
+ * 02 projects, 03 experience, 04 organizations, 05 awards, 06 toolkit.
+ * CTF is parked (see src/parked/README.md); restoring it takes 05 back and
+ * shifts awards and toolkit down one.
  */
 export const SECTIONS: Record<SectionKey, SectionMeta> = {
   projects: {
@@ -13,7 +15,7 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     singular: 'PROJECT',
     route: '/projects',
     heading: 'Selected work',
-    blurb: 'Pinned builds. Enter the section to orbit the full cluster.',
+    blurb: 'Pinned work right now, check out the projects tab for the full list.',
     collection: 'projects',
   },
   experience: {
@@ -22,8 +24,8 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     label: 'EXPERIENCE',
     singular: 'ROLE',
     route: '/experience',
-    heading: 'Where the hours went',
-    blurb: 'Engagements, internships and research posts, heaviest first.',
+    heading: 'Professional Experience',
+    blurb: 'Startup development, client consulting, and penetration testing.',
     collection: 'experiences',
   },
   organizations: {
@@ -32,13 +34,13 @@ export const SECTIONS: Record<SectionKey, SectionMeta> = {
     label: 'ORGANIZATIONS',
     singular: 'ORG',
     route: '/organizations',
-    heading: 'Rooms I helped run',
-    blurb: 'Societies, chapters and student bodies — and what I did inside them.',
+    heading: 'Organizations I put my time in',
+    blurb: 'Software houses, teaching cybersecurity, and student bodies.',
     collection: 'organizations',
   },
   awards: {
     key: 'awards',
-    num: '06',
+    num: '05',
     label: 'AWARDS',
     singular: 'AWARD',
     route: '/awards',

@@ -34,7 +34,7 @@ const uploadScreenshot = async (
 ): Promise<string | number | null> => {
   const filePath = path.join(ASSET_DIR, filename)
   if (!existsSync(filePath)) {
-    console.warn(`  ! missing asset ${filename} — project will fall back to artwork`)
+    console.warn(`  ! missing asset ${filename}, project will fall back to artwork`)
     return null
   }
 
@@ -123,14 +123,14 @@ const wipe = async (payload: Payload) => {
 const ensureAdmin = async (payload: Payload) => {
   const existing = await payload.find({ collection: 'users', limit: 1, depth: 0 })
   if (existing.totalDocs > 0) {
-    console.log('  admin user already exists — leaving it alone')
+    console.log('  admin user already exists, leaving it alone')
     return
   }
 
   const email = process.env.SEED_ADMIN_EMAIL
   const password = process.env.SEED_ADMIN_PASSWORD
   if (!email || !password) {
-    console.log('  SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set — create the first user at /admin')
+    console.log('  SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set. Create the first user at /admin')
     return
   }
 
@@ -176,7 +176,7 @@ const run = async () => {
   for (const project of projects) {
     const { slug, screenshot, ...rest } = project as typeof project & { screenshot?: string }
     const mediaId = screenshot
-      ? await uploadScreenshot(payload, screenshot, `${project.title} — screenshot`)
+      ? await uploadScreenshot(payload, screenshot, `${project.title} screenshot`)
       : null
     if (mediaId) withShots += 1
     await upsert(payload, 'projects', slug, {
@@ -230,7 +230,7 @@ const run = async () => {
     const { slug, competition, ...rest } = challenge
     const competitionId = competitionIds.get(competition)
     if (!competitionId) {
-      console.warn(`  ! unknown competition "${competition}" for challenge "${slug}" — skipped`)
+      console.warn(`  ! unknown competition "${competition}" for challenge "${slug}", skipped`)
       continue
     }
     await upsert(payload, 'ctf-challenges', slug, {
@@ -243,8 +243,8 @@ const run = async () => {
 
   console.log('─'.repeat(60))
   console.log('Seed complete.')
-  console.log('  projects, experience, organizations, awards — real.')
-  console.log('  CTF competitions and challenges — still PLACEHOLDER. Rewrite at /admin.\n')
+  console.log('  projects, experience, organizations, awards: real.')
+  console.log('  CTF competitions and challenges: still PLACEHOLDER. Rewrite at /admin.\n')
 
   process.exit(0)
 }

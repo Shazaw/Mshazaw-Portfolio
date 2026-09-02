@@ -1,13 +1,15 @@
 import type { MetadataRoute } from 'next'
 import { getAllCtfCompetitionSlugs } from '@/lib/data'
+import { CTF_ENABLED } from '@/lib/features'
 
 const base = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
-  const slugs = await getAllCtfCompetitionSlugs()
+  const slugs = CTF_ENABLED ? await getAllCtfCompetitionSlugs() : []
   const now = new Date()
 
-  const routes = ['', '/projects', '/experience', '/organizations', '/ctf', '/awards']
+  const routes = ['', '/projects', '/experience', '/organizations', '/awards']
+  if (CTF_ENABLED) routes.splice(4, 0, '/ctf')
 
   return [
     ...routes.map((route) => ({

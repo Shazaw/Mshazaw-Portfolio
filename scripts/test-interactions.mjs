@@ -261,21 +261,38 @@ const run = async () => {
     const radius = () =>
       page.evaluate(() => Number(document.querySelector('canvas')?.dataset.radius ?? 0))
 
-    const framing = await radius()
+    /*
+     * The orbit is damped, so a fixed delay measures wherever the ease happened
+     * to be rather than where it settles. Wait for the value to stop moving.
+     */
+    const settled = async (timeout = 9000) => {
+      const started = Date.now()
+      let last = await radius()
+      let stable = 0
+      while (Date.now() - started < timeout) {
+        await page.waitForTimeout(220)
+        const now = await radius()
+        stable = now === last ? stable + 1 : 0
+        last = now
+        if (stable >= 3) break
+      }
+      return last
+    }
+
+    const framing = await settled()
     check('chamber reports an orbit distance', framing > 0, String(framing))
 
     const rows = page.locator('button[class*=record]')
-    const settled = []
+    const focus = []
     for (const n of [0, 1, 2, 3, 4]) {
       await rows.nth(n).click()
-      await page.waitForTimeout(2400)
-      settled.push(await radius())
+      focus.push(await settled())
     }
     // Focus distance used to be a fraction of wherever the camera already was,
     // so every click zoomed further in until it hit the floor.
-    const drift = Math.max(...settled) - Math.min(...settled)
-    check('repeated selections do not compound the zoom', drift <= 4, settled.join(', '))
-    check('selection zooms in from the framing distance', settled[0] < framing, `${settled[0]} vs ${framing}`)
+    const drift = Math.max(...focus) - Math.min(...focus)
+    check('repeated selections do not compound the zoom', drift <= 2, focus.join(', '))
+    check('selection zooms in from the framing distance', focus[0] < framing, `${focus[0]} vs ${framing}`)
 
     // Moving between towers should pan across at a steady distance.
     await page.evaluate(() => {
@@ -287,21 +304,20 @@ const run = async () => {
       })
     })
     await rows.nth(0).click()
-    await page.waitForTimeout(2600)
+    await settled()
     await page.evaluate(() => (window.__arc.length = 0))
     const before = await radius()
     await rows.nth(3).click()
-    await page.waitForTimeout(2600)
+    await settled()
     const arc = await page.evaluate(() => window.__arc)
     const swing = arc.length ? Math.max(...arc, before) - Math.min(...arc, before) : 0
     const end = await radius()
-    check('switching towers holds the zoom', swing <= 3, `${before} → swing ${swing} → ${end}`)
-    check('and stays at the focus distance', Math.abs(end - settled[0]) <= 4, `${end} vs ${settled[0]}`)
+    check('switching towers holds the zoom', swing <= 3, `${before} then swing ${swing} then ${end}`)
+    check('and stays at the focus distance', Math.abs(end - focus[0]) <= 2, `${end} vs ${focus[0]}`)
 
     // Closing the card is what pulls the camera back out.
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(2600)
-    const afterClose = await radius()
+    const afterClose = await settled()
     check('closing the card zooms back out', afterClose > end + 8, `${end} → ${afterClose} (framing ${framing})`)
 
     // Clicking chrome must not be read as a click on the scene.
@@ -360,6 +376,34 @@ const run = async () => {
     const cells = await page.locator('a[href^="/projects?focus="]').count()
     check('projects strip renders three cards', cells === 3, String(cells))
 
+    // Three identical drawings side by side is what this guards against.
+    const motifCount = await page.evaluate(
+      () =>
+        new Set(
+          [...document.querySelectorAll('#experience article svg path')]
+            .filter((p) => p.closest('article'))
+            .map((p) => p.closest('article'))
+            .map((a) => a.querySelector('svg path')?.getAttribute('d')?.slice(0, 30)),
+        ).size,
+    )
+    check('strip cards do not repeat a motif', motifCount === 3, String(motifCount))
+
+    // Perspective lives on each grid that holds cards, or the stacked pair
+    // stays flat while only the lead tilts.
+    const perspectives = await page.evaluate(() => {
+      const group = document.querySelector('#projects article')?.closest('[data-count]')
+      const side = group?.querySelector('div[class*="side"]')
+      return {
+        group: getComputedStyle(group).perspective,
+        side: side ? getComputedStyle(side).perspective : 'none',
+      }
+    })
+    check(
+      'both the lead and the stacked pair have perspective',
+      perspectives.group !== 'none' && perspectives.side !== 'none',
+      JSON.stringify(perspectives),
+    )
+
     const shape = await page.evaluate(() => {
       const group = document.querySelector('#projects article')?.parentElement
       const cards = [...document.querySelectorAll('#projects article')]
@@ -411,38 +455,6 @@ const run = async () => {
     await ctx.close()
   }
 
-  /* ---------------------------------------------------------------- CTF ---- */
-  {
-    console.log('\nCTF — mode filtering and accordion')
-    const ctx = await browser.newContext({ viewport: DESKTOP })
-    const page = await ctx.newPage()
-    await page.goto(`${BASE}/ctf`, { waitUntil: 'networkidle' })
-    await page.waitForTimeout(500)
-
-    const solvedEvents = await page.locator('article h2').count()
-    await page.click('button:has-text("Authored")')
-    await page.waitForTimeout(400)
-    const authoredEvents = await page.locator('article h2').count()
-
-    check('SOLVED and AUTHORED show different event sets', solvedEvents !== authoredEvents, `${solvedEvents} vs ${authoredEvents}`)
-    check('mode is written to the URL', page.url().includes('mode=authored'), page.url())
-
-    await page.goto(`${BASE}/ctf/ugm-internal-ctf-2026?mode=authored`, { waitUntil: 'networkidle' })
-    await page.waitForTimeout(500)
-
-    const closedRows = await page.locator('#ctf-category-panel button').count()
-    await page.locator('article h2 button').first().click()
-    await page.waitForTimeout(600)
-    const panelHeight = await page.locator('#ctf-category-panel').evaluate((el) => el.getBoundingClientRect().height)
-    check('category panel expands', panelHeight > 40, `${Math.round(panelHeight)}px`)
-
-    await page.locator('#ctf-category-panel button').first().click()
-    await page.waitForTimeout(500)
-    check('challenge row opens the popup', (await popupState(page)).open)
-    await ctx.close()
-    void closedRows
-  }
-
   /* ----------------------------------------------------- degraded modes ---- */
   {
     console.log('\nfallbacks')
@@ -472,6 +484,35 @@ const run = async () => {
     )
     check('mobile: every cell spans the full row', spans.every((s) => s.includes('6')), spans.slice(0, 3).join(','))
     await mobile.close()
+  }
+
+  /* ------------------------------------------------------ parked & copy ---- */
+  {
+    console.log('\ncontent rules')
+    const ctx = await browser.newContext({ viewport: DESKTOP })
+    const page = await ctx.newPage()
+
+    // Em dashes are banned across every rendered surface.
+    for (const route of ['/', '/projects', '/experience', '/organizations', '/awards']) {
+      await page.goto(`${BASE}${route}`, { waitUntil: 'load' })
+      await page.waitForTimeout(600)
+      const dashes = await page.evaluate(() => (document.body.innerText.match(/\u2014/g) ?? []).length)
+      check(`no em dash on ${route}`, dashes === 0, String(dashes))
+    }
+
+    // CTF is parked: no route, no nav entry, no sitemap rows.
+    await page.goto(`${BASE}/`, { waitUntil: 'load' })
+    const navHasCtf = await page.evaluate(() =>
+      [...document.querySelectorAll('nav a')].some((a) => /ctf/i.test(a.textContent ?? '')),
+    )
+    check('CTF is out of the navbar', navHasCtf === false)
+
+    const ctfStatus = await page.evaluate(async (base) => (await fetch(`${base}/ctf`)).status, BASE)
+    check('CTF route is not built', ctfStatus === 404, String(ctfStatus))
+
+    const sitemap = await page.evaluate(async (base) => (await fetch(`${base}/sitemap.xml`)).text(), BASE)
+    check('CTF is out of the sitemap', !sitemap.includes('/ctf'))
+    await ctx.close()
   }
 
   /* -------------------------------------------------------------- a11y ---- */

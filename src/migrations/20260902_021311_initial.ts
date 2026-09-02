@@ -532,7 +532,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	\`cv_url\` text,
   	\`cv_file_id\` integer,
   	\`site_title\` text DEFAULT 'M. Ahsan Zaki Wiryawan',
-  	\`site_description\` text DEFAULT 'Portfolio of M. Ahsan Zaki Wiryawan — computer science undergraduate at UGM, cybersecurity concentration.',
+  	\`site_description\` text DEFAULT 'Portfolio of M. Ahsan Zaki Wiryawan, computer science undergraduate at UGM with a cybersecurity concentration.',
   	\`og_image_id\` integer,
   	\`updated_at\` text,
   	\`created_at\` text,

@@ -95,7 +95,7 @@ export const projects = [
         'A full evaluation environment built as a believable product rather than a checklist: a public website, an operator console, an API and a handful of network services, all containerised and resettable between sessions.',
       ),
       paragraph(
-        'Twelve intended findings chain from unauthenticated enumeration through to root on the isolated lab host — DNS zone transfer, a leaked .env on a guest SMB share, SSH credential reuse, an incident IDOR, UNION SQL injection, and a SUID PATH hijack at the end. Each is gated by a flag so instructors can enable individual paths.',
+        'Twelve intended findings chain from unauthenticated enumeration through to root on the isolated lab host: DNS zone transfer, a leaked .env on a guest SMB share, SSH credential reuse, an incident IDOR, UNION SQL injection, and a SUID PATH hijack at the end. Each is gated by a flag so instructors can enable individual paths.',
       ),
       paragraph(
         'Ships with an architecture and containment note, a student brief, a grading rubric and an instructor answer key in which every step was executed live against a deployed instance.',
@@ -127,7 +127,7 @@ export const projects = [
     title: 'CloudLibrary',
     slug: 'cloudlibrary',
     summary:
-      'Public cloud library serving 240+ public-domain books — accounts, reading progress, reviews and uploads, deployed on a DigitalOcean droplet.',
+      'Public cloud library serving 240+ public-domain books, with accounts, reading progress, reviews and uploads, deployed on a DigitalOcean droplet.',
     category: 'Cloud',
     year: 2026,
     date: '2026-04-01',
@@ -141,14 +141,14 @@ export const projects = [
     screenshot: 'cloudlibrary.png',
     description: prose(
       'A full-stack platform for discovering, downloading and sharing public-domain literature, built as a cloud computing project and deployed to a 1 vCPU / 1 GB Ubuntu droplet behind Nginx and PM2.',
-      'Readers browse and search the collection, track progress across Saved / Reading / Finished, keep a want-to-read list, upload their own public-domain books and review what they finish. The front end is a vanilla JS SPA with no framework — the whole point was to own every layer.',
+      'Readers browse and search the collection, track progress across Saved / Reading / Finished, keep a want-to-read list, upload their own public-domain books and review what they finish. The front end is a vanilla JS SPA with no framework, because the whole point was to own every layer.',
     ),
   },
   {
     title: 'BEM UGM Penetration Test',
     slug: 'bemkm-ugm-pentest',
     summary:
-      'Security engineer for the BEM KM UGM cabinet site — ran an authorised penetration test against the live platform and reported the findings.',
+      'Security engineer for the BEM KM UGM cabinet site, running an authorised penetration test against the live platform and reporting the findings.',
     category: 'Security Engagement',
     year: 2026,
     subtag: 'PENTEST',
@@ -162,14 +162,14 @@ export const projects = [
     screenshot: 'bemkm-ugm.png',
     description: prose(
       'Authorised security assessment of the BEM KM UGM platform: reconnaissance and surface mapping, then a black-box pass over authentication, authorisation and input handling, with findings written up for the people who had to act on them.',
-      'The useful half of this work is never the exploit — it is turning what you found into something a non-security team can prioritise and actually fix.',
+      'The useful half of this work is never the exploit. It is turning what you found into something a non-security team can prioritise and actually fix.',
     ),
   },
   {
     title: '180DC UGM Website',
     slug: '180dc-ugm-website',
     summary:
-      'IT manager for 180 Degrees Consulting UGM — presiding over every initiative on the chapter website and its 300+ applicant open recruitment.',
+      'IT manager for 180 Degrees Consulting UGM, presiding over every initiative on the chapter website and its 300+ applicant open recruitment.',
     category: 'Platform',
     year: 2026,
     date: '2026-08-01',
@@ -183,7 +183,7 @@ export const projects = [
     liveUrl: 'https://www.180dcugm.com/',
     screenshot: '180dc-ugm.png',
     description: prose(
-      'IT manager for the UGM chapter of 180 Degrees Consulting, presiding over every initiative that runs through the website — the public storefront for a student consultancy that takes on clients who could not otherwise afford one.',
+      'IT manager for the UGM chapter of 180 Degrees Consulting, presiding over every initiative that runs through the website, the public storefront for a student consultancy that takes on clients who could not otherwise afford one.',
       'Oversaw the open recruitment cycle end to end, carrying 300+ applicants through the site: intake, staged flow and timeline, and the content around it.',
     ),
   },
@@ -225,14 +225,14 @@ export const projects = [
     repoUrl: 'https://github.com/Shazaw/CrediWise',
     description: doc(
       paragraph(
-        'CrediWise turns verified financial records into an explainable view of financial behaviour, repayment capacity, shock resilience and safe borrowing capacity — for users whose income is informal, seasonal or simply invisible to a conventional score.',
+        'CrediWise turns verified financial records into an explainable view of financial behaviour, repayment capacity, shock resilience and safe borrowing capacity, for users whose income is informal, seasonal or simply invisible to a conventional score.',
       ),
       paragraph(
         'We do not only determine whether a user is creditworthy. We determine whether the credit is worthy of the user.',
       ),
       bullets([
         'Cash-Flow Digital Twin separating personal from business activity.',
-        'Deterministic risk and safe-borrowing engines with reason codes — AI can phrase evidence, never calculate a score.',
+        'Deterministic risk and safe-borrowing engines with reason codes. AI can phrase evidence, never calculate a score.',
         'Shock resilience modelling for income drops, delays and weakest-month conditions.',
         'Safe Offer Score ranking simulated loan offers by user suitability rather than commission.',
       ]),
@@ -257,7 +257,7 @@ export const projects = [
     stripArtwork: 'bridge',
     repoUrl: 'https://github.com/Shazaw/Acme-Market-Vulnerable-Lab',
     description: prose(
-      'A production-shaped environment students can enumerate, exploit within scope and reset between sessions — HTTP, HTTPS, DNS, FTP, SMTP, SSH and MySQL, plus a Laravel storefront.',
+      'A production-shaped environment students can enumerate, exploit within scope and reset between sessions: HTTP, HTTPS, DNS, FTP, SMTP, SSH and MySQL, plus a Laravel storefront.',
       'Coverage runs from DNS zone transfer and anonymous FTP through avatar-upload RCE, stored XSS, IDOR and a legacy SQL injection login, ending in privilege escalation via a writable cron target and an unsafe SUID binary.',
     ),
   },
@@ -265,7 +265,7 @@ export const projects = [
     title: 'Penetration Testing Labs',
     slug: 'penetration-testing-labs',
     summary:
-      'Four graded vulnerable environments — legacy, easy, medium and hard — written for and used in OmahTI Academy workshops.',
+      'Four graded vulnerable environments, from legacy through easy, medium and hard, written for and used in OmahTI Academy workshops.',
     category: 'Security Education',
     year: 2025,
     date: '2025-07-01',
@@ -297,7 +297,7 @@ export const projects = [
     stripArtwork: 'vault',
     repoUrl: 'https://github.com/Shazaw/CTF-Library',
     description: prose(
-      'Two things in one repository: solutions and thought process for events played, and the source, setup and answer keys for challenges authored — including the full OmahTI Academy final project covering web exploitation, cryptography, forensics and OSINT.',
+      'Two things in one repository: solutions and thought process for events played, and the source, setup and answer keys for challenges authored, including the full OmahTI Academy final project covering web exploitation, cryptography, forensics and OSINT.',
       'The authored half is written for people who have never competed before: each challenge teaches exactly one idea and is meant to be solvable in an hour by someone seeing it for the first time.',
     ),
   },
@@ -316,13 +316,13 @@ export const projects = [
     stripArtwork: 'vault',
     repoUrl: 'https://github.com/Shazaw/E2EE-Proto',
     description: prose(
-      'A small Rust prototype for an end-to-end encrypted messaging layer — the session handshake and ratcheting state written from the protocol description rather than pulled from a library, because that is the only way to find out which parts you did not actually understand.',
+      'A small Rust prototype for an end-to-end encrypted messaging layer: the session handshake and ratcheting state written from the protocol description rather than pulled from a library, because that is the only way to find out which parts you did not actually understand.',
     ),
   },
   {
     title: 'OmahTI Academy Cybersecurity',
     slug: 'omahti-academy-cybersecurity',
-    summary: 'Hands-on teaching material for the OmahTI Academy security track — forensics, steganography and file carving exercises.',
+    summary: 'Hands-on teaching material for the OmahTI Academy security track: forensics, steganography and file carving exercises.',
     category: 'Security Education',
     year: 2025,
     date: '2025-07-01',

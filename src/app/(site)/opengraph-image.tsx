@@ -3,7 +3,7 @@ import { getProfile } from '@/lib/data'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-export const alt = 'HOLOGRID — portfolio'
+export const alt = 'HOLOGRID portfolio'
 
 /** OG template on paper + blueprint grid (spec §11). */
 const OpengraphImage = async () => {

@@ -23,17 +23,20 @@ export const StripCell = ({
   total,
   href,
   variant,
+  motif,
 }: {
   item: SurveyItem
   index: number
   total: number
   href: string
   variant: 'lead' | 'side'
+  /** Chosen across the whole strip so neighbouring cards never repeat. */
+  motif?: string
 }) => {
   const mediaRef = useRef<HTMLDivElement>(null)
   const reduced = usePrefersReducedMotion()
   const lead = variant === 'lead'
-  const art = item.image ? null : buildArtwork(item.artwork)
+  const art = item.image ? null : buildArtwork(item.artwork, motif)
   // `slice` crops to fill, which over-zooms a motif on a card this large.
   const fit = lead ? 'xMidYMax meet' : 'xMidYMax slice'
 
