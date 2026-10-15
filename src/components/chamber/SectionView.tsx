@@ -7,7 +7,7 @@ import { Mosaic } from '@/components/mosaic/Mosaic'
 import { PopupCard, type PopupTarget } from '@/components/cards/PopupCard'
 import { usePrefersReducedMotion } from '@/lib/usePrefersReducedMotion'
 import { hasWebGL, isSmallViewport } from '@/lib/webgl'
-import { MAX_TOWERS } from '@/lib/chamberConstants'
+import { MAX_NODES } from '@/lib/chamberConstants'
 import type { ChamberNode, SectionMeta, SurveyItem } from '@/lib/types'
 import type { ChamberHandle } from './engine'
 import { ChamberLoader } from './Loader'
@@ -40,6 +40,7 @@ export const SectionView = ({
   const chipRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const labelsRef = useRef<HTMLDivElement>(null)
   const engineRef = useRef<ChamberHandle | null>(null)
   const bootedRef = useRef(false)
   // `?focus=<slug>` is read on the client so section pages stay fully static.
@@ -134,7 +135,8 @@ export const SectionView = ({
     const canvas = canvasRef.current
     const chipEl = chipRef.current
     const popupEl = popupRef.current
-    if (!canvas || !chipEl || !popupEl) return
+    const labelsEl = labelsRef.current
+    if (!canvas || !chipEl || !popupEl || !labelsEl) return
 
     bootedRef.current = true
     setLoading(true)
@@ -173,6 +175,7 @@ export const SectionView = ({
           canvas,
           chipEl,
           popupEl,
+          labelsEl,
           nodes,
           reducedMotion,
           onHoverChange: (index) => {
@@ -201,6 +204,15 @@ export const SectionView = ({
   useEffect(() => {
     loadingRef.current = loading
   }, [loading])
+
+  useEffect(() => {
+    if (capable) return
+    engineRef.current?.dispose()
+    engineRef.current = null
+    bootedRef.current = false
+    setSelected(null)
+    setLoading(false)
+  }, [capable])
 
   useEffect(
     () => () => {
@@ -294,7 +306,8 @@ export const SectionView = ({
 
   const showCards = mode === 'cards'
   const showPanel = capable && !showCards && wideEnough
-  const overflow = Math.max(0, nodes.length - MAX_TOWERS)
+  const overflow = Math.max(0, nodes.length - MAX_NODES)
+  const years = nodes.map((node) => node.year)
 
   return (
     <div className={styles.chamber}>
@@ -313,7 +326,7 @@ export const SectionView = ({
       {capable ? (
         <div className={[styles.ui, styles.toggle].join(' ')} role="group" aria-label="View mode">
           <button type="button" aria-pressed={mode === 'grid'} onClick={() => setMode('grid')}>
-            ◫ Grid
+            ✦ Neural map
           </button>
           <button type="button" aria-pressed={mode === 'cards'} onClick={() => setMode('cards')}>
             ▣ Cards
@@ -332,7 +345,29 @@ export const SectionView = ({
       )}
 
       {capable && !showCards ? (
-        <div className={[styles.ui, styles.hint].join(' ')}>Drag to orbit · Scroll to zoom · Click a block</div>
+        <>
+          <div className={[styles.ui, styles.hint].join(' ')}>Drag to orbit · Scroll to zoom · Select a star</div>
+          <div className={[styles.ui, styles.mapControls].join(' ')} role="group" aria-label="Map controls">
+            <button type="button" aria-label="Zoom in" onClick={() => engineRef.current?.zoom(0.82)}>+</button>
+            <button type="button" aria-label="Zoom out" onClick={() => engineRef.current?.zoom(1.22)}>−</button>
+            <button type="button" aria-label="Reset map view" onClick={() => engineRef.current?.reset()}>↺</button>
+          </div>
+          <div className={[styles.ui, styles.mapStatus].join(' ')}><span />{Math.min(nodes.length, MAX_NODES)} nodes · Neural map</div>
+        </>
+      ) : null}
+
+      {capable ? (
+        <div ref={labelsRef} className={styles.nodeLabels} style={{ display: showCards ? 'none' : undefined }} role="group" aria-label="Neural map records">
+          {nodes.slice(0, MAX_NODES).map((node, index) => (
+            <button key={node.id} type="button" data-node={index} className={styles.nodeLabel}
+              aria-pressed={selected?.item.slug === node.slug}
+              onClick={() => selectFromPanel(index)}
+              onMouseEnter={() => highlightFromPanel(index)} onMouseLeave={() => highlightFromPanel(null)}
+              onFocus={() => highlightFromPanel(index)} onBlur={() => highlightFromPanel(null)}>
+              <span>{node.label}</span><small>{node.year}</small>
+            </button>
+          ))}
+        </div>
       ) : null}
 
       <div ref={chipRef} className={styles.chip} aria-hidden="true">
@@ -375,8 +410,15 @@ export const SectionView = ({
           </ul>
           {items.length > PANEL_RECORDS ? (
             <p className={styles.panelMore}>
-              +{items.length - PANEL_RECORDS} more · orbit the cluster or switch to cards
+              +{items.length - PANEL_RECORDS} more · explore the map or switch to cards
             </p>
+          ) : null}
+          {years.length ? (
+            <div className={styles.mapLegend}>
+              <span className={styles.legendTitle}>A constellation over time</span>
+              <div className={styles.timeScale}><span>{Math.min(...years)}</span><i aria-hidden="true" /><span>{Math.max(...years)}</span></div>
+              <p>Older at the core. Newer at the edges.</p>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -398,7 +440,7 @@ export const SectionView = ({
             Sec {section.num} · {section.label} · Card view
           </Eyebrow>
           {timedOut ? (
-            <p className={styles.notice}>Grid unavailable on this device. Showing cards.</p>
+            <p className={styles.notice}>Neural map unavailable on this device. Showing cards.</p>
           ) : null}
         </div>
         <Mosaic
@@ -411,7 +453,7 @@ export const SectionView = ({
         />
         <div className={styles.cardsFoot}>
           {items.length} record{items.length === 1 ? '' : 's'}
-          {overflow > 0 ? ` · ${overflow} beyond the cluster budget shown here only` : ''}
+          {overflow > 0 ? ` · ${overflow} beyond the map budget shown here only` : ''}
         </div>
       </div>
 

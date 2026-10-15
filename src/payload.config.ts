@@ -14,6 +14,7 @@ import { Awards } from './collections/Awards'
 import { CtfCompetitions } from './collections/CtfCompetitions'
 import { CtfChallenges } from './collections/CtfChallenges'
 import { Profile } from './globals/Profile'
+import { Posts } from './collections/Posts'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -26,7 +27,7 @@ export default buildConfig({
       titleSuffix: ' · HOLOGRID',
     },
   },
-  collections: [Projects, Experiences, Organizations, Awards, CtfCompetitions, CtfChallenges, Media, Users],
+  collections: [Projects, Experiences, Organizations, Awards, Posts, CtfCompetitions, CtfChallenges, Media, Users],
   globals: [Profile],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

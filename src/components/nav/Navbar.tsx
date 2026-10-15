@@ -20,6 +20,7 @@ export const NAV_LINKS: NavLinkDef[] = [
   { label: 'Orgs', href: '/organizations' },
   ...(CTF_ENABLED ? [{ label: 'CTF', href: '/ctf' }] : []),
   { label: 'Awards', href: '/awards' },
+  { label: 'Blog', href: '/blog' },
 ]
 
 /**

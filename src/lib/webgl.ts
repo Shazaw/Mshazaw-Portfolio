@@ -22,7 +22,7 @@ export const hasWebGL = (): boolean => {
 }
 
 /**
- * Small screens get the mosaic only (§8.5) — a 40-tower cluster on a phone is
+ * Small screens get the mosaic only (§8.5) — a dense 3D network on a phone is
  * neither legible nor affordable.
  */
 export const isSmallViewport = (): boolean =>

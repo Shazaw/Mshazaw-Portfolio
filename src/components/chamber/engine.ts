@@ -1,661 +1,303 @@
-/**
- * The hologram chamber (spec §8.2–8.4).
- *
- * Vanilla Three.js with named imports so the bundler can drop the rest of the
- * library. No react-three-fiber, no model files, no postprocessing — the
- * additive-on-gradient recipe IS the bloom.
- *
- * The engine writes the hover chip and popup positions straight to DOM nodes
- * rather than through React state: those update every frame and must not
- * trigger renders.
- */
+/** The interactive neural map. Three.js is loaded only when this view opens. */
 import {
-  AdditiveBlending,
-  BoxGeometry,
-  BufferAttribute,
-  BufferGeometry,
-  CanvasTexture,
-  EdgesGeometry,
-  Fog,
-  GridHelper,
-  Group,
-  LineBasicMaterial,
-  LineSegments,
-  Mesh,
-  MeshBasicMaterial,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Points,
-  PointsMaterial,
-  Raycaster,
-  Scene,
-  Sprite,
-  SpriteMaterial,
-  RepeatWrapping,
-  Vector2,
-  Vector3,
-  WebGLRenderer,
-  type Texture,
+  AdditiveBlending, BufferAttribute, BufferGeometry, CanvasTexture, Color,
+  Group, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial,
+  PerspectiveCamera, Points, PointsMaterial, QuadraticBezierCurve3, Raycaster,
+  Scene, ShaderMaterial, SphereGeometry, Sprite, SpriteMaterial, TubeGeometry,
+  Vector2, Vector3, WebGLRenderer,
 } from 'three'
-import { mulberry32, hashSeed } from '@/lib/random'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { mulberry32 } from '@/lib/random'
+import { buildNeuralMap } from '@/lib/neuralMap'
 import type { ChamberNode } from '@/lib/types'
-// Beyond this the cluster stops reading as a skyline and starts costing frames.
-import { MAX_TOWERS } from '@/lib/chamberConstants'
 
-const HOLO = 0x3fc6ff
-const HOLO_HOT = 0xb6ecff
-const HOLO_BRIGHT = 0x9fe5ff
-const CORE = 0x0a1b2e
-const FLOOR_LINE = 0x2b93c4
+const NAV_CLEARANCE = 80
+const IDLE_BEFORE_AUTOROTATE = 9000
+const TRAIL_LENGTH = 16
 
-
-const GOLDEN_ANGLE = 2.39996
-const IDLE_BEFORE_AUTOROTATE = 6000
-const CARDS_FRAME_INTERVAL = 100 // ~10fps while the mosaic is up
-/** Navbar height plus a margin — the popup never slides under the chrome. */
-const NAV_CLEARANCE = 72
-
-export interface ChamberCallbacks {
+export interface ChamberOptions {
+  canvas: HTMLCanvasElement
+  chipEl: HTMLElement
+  popupEl: HTMLElement
+  labelsEl: HTMLElement
+  nodes: ChamberNode[]
+  reducedMotion: boolean
   onHoverChange: (index: number | null) => void
   onSelectChange: (index: number | null) => void
   onReady: () => void
 }
 
-export interface ChamberOptions extends ChamberCallbacks {
-  canvas: HTMLCanvasElement
-  chipEl: HTMLElement
-  popupEl: HTMLElement
-  nodes: ChamberNode[]
-  reducedMotion: boolean
-}
-
-interface Tower {
-  group: Group
-  edges: LineSegments
-  shaft: Sprite
-  crown: Sprite
-  glow: Sprite
-  solid: Mesh
-  floors: LineSegments[]
-  height: number
-  index: number
-}
-
-/** Shared 128px radial texture: the only generated asset in the scene. */
-const makeGlowTexture = (): CanvasTexture => {
+/** Soft white light, tinted by each material. No disc, rim or billboard edge. */
+const makeGlowTexture = () => {
   const canvas = document.createElement('canvas')
-  canvas.width = 128
-  canvas.height = 128
-  const ctx = canvas.getContext('2d')
-  if (ctx) {
-    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
-    gradient.addColorStop(0, 'rgba(120,215,255,1)')
-    gradient.addColorStop(0.35, 'rgba(63,198,255,.45)')
-    gradient.addColorStop(1, 'rgba(63,198,255,0)')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, 128, 128)
-  }
+  canvas.width = canvas.height = 128
+  const context = canvas.getContext('2d')!
+  const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64)
+  gradient.addColorStop(0, 'rgba(255,255,255,1)')
+  gradient.addColorStop(0.08, 'rgba(255,255,255,.95)')
+  gradient.addColorStop(0.22, 'rgba(255,255,255,.5)')
+  gradient.addColorStop(0.48, 'rgba(255,255,255,.1)')
+  gradient.addColorStop(1, 'rgba(255,255,255,0)')
+  context.fillStyle = gradient
+  context.fillRect(0, 0, 128, 128)
   return new CanvasTexture(canvas)
 }
 
-/**
- * Surface motif: a dark panel grid with a scattering of lit pads, so a tower
- * face reads as a built thing rather than a flat plane. Deliberately low
- * contrast — the light shafts are the focus, this is only texture underneath
- * them. Seeded per tower so no two facades repeat.
- */
-const makePanelTexture = (seed: number): CanvasTexture => {
-  const size = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')
-  const random = mulberry32(seed)
-
-  if (ctx) {
-    ctx.fillStyle = '#050d16'
-    ctx.fillRect(0, 0, size, size)
-
-    // Panel seams, only just there.
-    ctx.strokeStyle = 'rgba(22, 62, 92, 0.3)'
-    ctx.lineWidth = 1
-    for (let i = 1; i < 6; i++) {
-      const p = (size / 6) * i
-      ctx.beginPath()
-      ctx.moveTo(p, 0)
-      ctx.lineTo(p, size)
-      ctx.moveTo(0, p)
-      ctx.lineTo(size, p)
-      ctx.stroke()
-    }
-
-    // Pads. Mostly barely lit; a handful read as windows with something behind
-    // them. Any brighter and the motif starts competing with the shafts.
-    for (let i = 0; i < 26; i++) {
-      const w = 5 + random() * 16
-      const h = 3 + random() * 5
-      const x = random() * (size - w)
-      const y = random() * (size - h)
-      const roll = random()
-      ctx.fillStyle =
-        roll > 0.93
-          ? 'rgba(96, 190, 240, 0.42)'
-          : roll > 0.72
-            ? 'rgba(34, 92, 130, 0.32)'
-            : 'rgba(16, 44, 66, 0.55)'
-      ctx.fillRect(x, y, w, h)
-    }
-  }
-
-  const texture = new CanvasTexture(canvas)
-  texture.wrapS = RepeatWrapping
-  texture.wrapT = RepeatWrapping
-  return texture
-}
-
 export const createChamber = (options: ChamberOptions) => {
-  const { canvas, chipEl, popupEl, nodes, reducedMotion } = options
-  const visible = nodes.slice(0, MAX_TOWERS)
-
-  const renderer = new WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-    powerPreference: 'high-performance',
-  })
+  const { canvas, chipEl, popupEl, labelsEl, nodes, reducedMotion } = options
+  const layout = buildNeuralMap(nodes)
+  const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75))
   renderer.setClearColor(0x000000, 0)
-
   const scene = new Scene()
-  // Tighter than the spec's 60–190: the floor is smaller now, and the far edge
-  // has to dissolve rather than end on a visible boundary.
-  scene.fog = new Fog(0x04070d, 42, 132)
-
-  const camera = new PerspectiveCamera(45, 1, 0.1, 400)
-
-  /* ------------------------------------------------------ atmosphere ---- */
-  /* Mandatory: without these the cluster reads as a depressing empty grid. */
-
-  /*
-   * The survey floor. It was reading brighter than the cluster and running
-   * uniformly to the horizon, which flattened the whole frame — the eye had
-   * nowhere to land. Pulled in and dimmed so the fog can eat its edge, it now
-   * sits under the towers instead of competing with them.
-   */
-  const gridA = new GridHelper(150, 30, 0x11577a, 0x0b3a54)
-  const gridB = new GridHelper(150, 8, 0x2596c9, 0x2596c9)
-  for (const [grid, opacity] of [
-    [gridA, 0.34],
-    [gridB, 0.26],
-  ] as const) {
-    const material = grid.material as LineBasicMaterial
-    material.transparent = true
-    material.opacity = opacity
+  const camera = new PerspectiveCamera(46, 1, 0.1, 600)
+  const disposables: { dispose: () => void }[] = []
+  const own = <T extends { dispose: () => void }>(value: T): T => { disposables.push(value); return value }
+  const glow = own(makeGlowTexture())
+  const random = mulberry32(7439)
+  const light = (color: number, size: number, opacity: number) => {
+    const material = own(new SpriteMaterial({ map: glow, color, opacity, transparent: true, blending: AdditiveBlending, depthWrite: false }))
+    const sprite = new Sprite(material)
+    sprite.scale.set(size, size, 1)
+    return sprite
   }
-  gridB.position.y = 0.02
-  scene.add(gridA, gridB)
 
-  const glowTexture: Texture = makeGlowTexture()
-  const basePanelTexture = makePanelTexture(0x5eed)
-
-  const poolMaterial = new MeshBasicMaterial({
-    map: glowTexture,
-    transparent: true,
-    opacity: 0.26,
-    blending: AdditiveBlending,
-    depthWrite: false,
-  })
-  const poolGeometry = new PlaneGeometry(1, 1)
-  const pool = new Mesh(poolGeometry, poolMaterial)
-  pool.rotation.x = -Math.PI / 2
-  pool.scale.set(64, 64, 1)
-  pool.position.y = 0.05
-  scene.add(pool)
-
-  const PARTICLE_COUNT = 240
-  const particlePositions = new Float32Array(PARTICLE_COUNT * 3)
-  const particleRandom = mulberry32(99)
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const angle = particleRandom() * Math.PI * 2
-    const radius = 8 + particleRandom() * 48
-    particlePositions[i * 3] = Math.cos(angle) * radius
-    particlePositions[i * 3 + 1] = 1 + particleRandom() * 34
-    particlePositions[i * 3 + 2] = Math.sin(angle) * radius
+  /* A quiet, deep web behind the record nodes. All decorative stars share two draws. */
+  const backdrop = new Group()
+  const distant: Vector3[] = []
+  const starPositions: number[] = []
+  for (let i = 0; i < 420; i++) {
+    const radius = layout.extent * 1.65 + random() * 100
+    const theta = random() * Math.PI * 2
+    const y = random() * 2 - 1
+    const r = Math.sqrt(1 - y * y)
+    const position = new Vector3(Math.cos(theta) * r * radius, y * radius, Math.sin(theta) * r * radius)
+    distant.push(position)
+    starPositions.push(...position.toArray())
   }
-  const particleGeometry = new BufferGeometry()
-  particleGeometry.setAttribute('position', new BufferAttribute(particlePositions, 3))
-  const particleMaterial = new PointsMaterial({
-    color: HOLO,
-    size: 0.35,
-    transparent: true,
-    opacity: 0.5,
-    blending: AdditiveBlending,
-    depthWrite: false,
-    // Untextured points draw as hard squares, and size attenuation turns one
-    // that drifts near the camera into a solid cyan block. The shared radial
-    // texture makes them soft motes at every distance.
-    map: glowTexture,
-    sizeAttenuation: true,
+  const starGeometry = own(new BufferGeometry())
+  starGeometry.setAttribute('position', new BufferAttribute(new Float32Array(starPositions), 3))
+  const starMaterial = own(new PointsMaterial({ map: glow, color: 0x6caddb, size: 0.7, opacity: 0.65, transparent: true, depthWrite: false, blending: AdditiveBlending }))
+  backdrop.add(new Points(starGeometry, starMaterial))
+  const webPositions: number[] = []
+  distant.slice(0, 150).forEach((a, index, all) => {
+    const nearest = all.map((b, i) => ({ b, i, distance: a.distanceTo(b) })).filter(({ i }) => i !== index).sort((a, b) => a.distance - b.distance).slice(0, 2)
+    nearest.forEach(({ b, i }) => { if (i > index) webPositions.push(...a.toArray(), ...b.toArray()) })
   })
-  const particles = new Points(particleGeometry, particleMaterial)
-  scene.add(particles)
+  const webGeometry = own(new BufferGeometry())
+  webGeometry.setAttribute('position', new BufferAttribute(new Float32Array(webPositions), 3))
+  backdrop.add(new LineSegments(webGeometry, own(new LineBasicMaterial({ color: 0x315f8d, opacity: 0.17, transparent: true, depthWrite: false, blending: AdditiveBlending }))))
+  scene.add(backdrop)
+  for (const [x, y, z, color] of [[-22, 4, -32, 0x174477], [25, -8, -25, 0x303575], [3, 12, -40, 0x075863]]) {
+    const cloud = light(color, layout.extent * 4, 0.17)
+    cloud.position.set(x, y, z)
+    scene.add(cloud)
+  }
 
-  /* ---------------------------------------------------- the cluster ---- */
-
-  const towers: Tower[] = []
-  const pickables: Mesh[] = []
-  const disposables: { dispose: () => void }[] = [
-    poolGeometry,
-    poolMaterial,
-    particleGeometry,
-    particleMaterial,
-    glowTexture,
-    basePanelTexture,
-  ]
-  const birth: number[] = []
-  const start = performance.now()
-
-  visible.forEach((node, i) => {
-    const random = mulberry32(hashSeed(node.slug || node.id))
+  /* Record stars: hot white core, broad blue bloom, and very soft diffraction rays. */
+  const hitGeometry = own(new SphereGeometry(1, 12, 8))
+  const hitMaterial = own(new MeshBasicMaterial({ visible: false }))
+  const stars = layout.nodes.map((node) => {
     const group = new Group()
-
-    /*
-     * Phyllotaxis. Well above the spec's 2.05 coefficient because the footprints
-     * are far wider than the spec's, and because these are BOXES — two squares
-     * on a diagonal touch long before their centre distance suggests it, which
-     * is what put the centre tower through its first neighbour.
-     * `scripts/test-cluster.ts` holds these two numbers to a real gap.
-     */
-    const radius = i === 0 ? 0 : 5.0 + 6.2 * Math.sqrt(i)
-    group.position.set(Math.cos(i * GOLDEN_ANGLE) * radius, 0, Math.sin(i * GOLDEN_ANGLE) * radius)
-
-    /*
-     * Weight drives height (spec) and now footprint as well. With a near-fixed
-     * footprint every tower read as the same slab and the only cue was height,
-     * which the perspective flattens — coupling both gives the cluster a
-     * silhouette you can read at a glance.
-     */
-    const footprint = 3.5 + node.weight * 0.5 + random() * 0.6
-    // The falloff term guarantees the peak sits at centre. Shorter than the
-    // spec's (7 + w*4.6): against the wider footprints that read as spires, and
-    // the cluster wants to sit down on the floor rather than tower over it.
-    const height = (6.2 + node.weight * 3.6) * (1 - 0.028 * i) + random() * 1.2
-
-    const solidGeometry = new BoxGeometry(footprint, height, footprint)
-    // Cloned so each tower can scale the pattern to its own size and keep the
-    // pads square; clones share the underlying bitmap.
-    const panelTexture = basePanelTexture.clone()
-    panelTexture.needsUpdate = true
-    panelTexture.repeat.set(Math.max(1, Math.round(footprint / 2.6)), Math.max(2, Math.round(height / 5.5)))
-    const solidMaterial = new MeshBasicMaterial({ color: 0xffffff, map: panelTexture })
-    const solid = new Mesh(solidGeometry, solidMaterial)
-    solid.position.y = height / 2
-    solid.userData.index = i
-
-    const edgeSource = new BoxGeometry(footprint, height, footprint)
-    const edgeGeometry = new EdgesGeometry(edgeSource)
-    const edgeMaterial = new LineBasicMaterial({
-      color: HOLO,
-      transparent: true,
-      opacity: 0.7,
-      blending: AdditiveBlending,
-    })
-    const edges = new LineSegments(edgeGeometry, edgeMaterial)
-    edges.position.y = height / 2
-
-    /*
-     * Storey plates — the spec calls these "what makes towers read as lit,
-     * occupied buildings", but at 0.999x they sit INSIDE an opaque core and are
-     * occluded on every tower, which is why the cluster read as blank slabs.
-     * Drawn slightly proud of the faces instead, they ring each tower as a
-     * floor slab and become the cluster's only real texture.
-     */
-    const floors: LineSegments[] = []
-    const floorGeometry = new EdgesGeometry(new PlaneGeometry(footprint * 1.035, footprint * 1.035))
-    const floorMaterial = new LineBasicMaterial({
-      color: FLOOR_LINE,
-      transparent: true,
-      opacity: 0.4,
-      blending: AdditiveBlending,
-    })
-    for (let f = 1; f < Math.floor(height / 2.6); f++) {
-      const floor = new LineSegments(floorGeometry, floorMaterial)
-      floor.rotation.x = -Math.PI / 2
-      floor.position.y = f * 2.6
-      group.add(floor)
-      floors.push(floor)
-    }
-
-    /*
-     * A light shaft rising out of the roof, in place of the wireframe cap box
-     * that used to sit up there looking like freight. This is the tower's
-     * signal — the surface motif stays quiet underneath it.
-     */
-    const shaftHeight = 9.5 + node.weight * 1.9
-    const shaftMaterial = new SpriteMaterial({
-      map: glowTexture,
-      color: HOLO_BRIGHT,
-      transparent: true,
-      opacity: 0.2,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    })
-    const shaft = new Sprite(shaftMaterial)
-    shaft.scale.set(footprint * 0.42, shaftHeight, 1)
-    shaft.position.y = height + shaftHeight * 0.42
-
-    // Hot spot where the shaft leaves the roof.
-    const crownMaterial = new SpriteMaterial({
-      map: glowTexture,
-      color: HOLO_HOT,
-      transparent: true,
-      opacity: 0.4,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    })
-    const crown = new Sprite(crownMaterial)
-    crown.scale.set(footprint * 0.95, footprint * 0.95, 1)
-    crown.position.y = height + 0.2
-
-    const glowMaterial = new SpriteMaterial({
-      map: glowTexture,
-      color: HOLO,
-      transparent: true,
-      opacity: 0.16,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    })
-    const glow = new Sprite(glowMaterial)
-    glow.scale.set(footprint * 2.3, height * 1.05, 1)
-    glow.position.y = height * 0.55
-
-    /*
-     * Contact pool. Without it the towers read as floating in front of a grid
-     * rather than standing on it — this is the cheapest possible ground shadow,
-     * inverted: light spilling onto the floor instead of shadow.
-     */
-    const contactMaterial = new SpriteMaterial({
-      map: glowTexture,
-      color: HOLO,
-      transparent: true,
-      opacity: 0.15,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    })
-    const contact = new Sprite(contactMaterial)
-    contact.scale.set(footprint * 2.6, footprint * 2.6, 1)
-    contact.position.y = 0.15
-    contact.material.rotation = 0
-
-    group.add(solid, edges, shaft, crown, glow, contact)
-    group.scale.y = reducedMotion ? 1 : 0.001
+    group.position.fromArray(node.position)
+    const halo = light(0x248fff, node.size * 9, 0.5)
+    const corona = light(0x65ddff, node.size * 4.5, 0.8)
+    const core = light(0xe9fbff, node.size * 1.65, 1)
+    const flare = light(0x9ae8ff, 1, 0.65)
+    flare.scale.set(node.size * 6, node.size * 0.22, 1)
+    const vertical = light(0x83caff, 1, 0.3)
+    vertical.scale.set(node.size * 0.22, node.size * 4.2, 1)
+    const hit = new Mesh(hitGeometry, hitMaterial)
+    hit.scale.setScalar(node.size * 1.2)
+    hit.userData.index = node.index
+    group.add(halo, corona, core, flare, vertical, hit)
     scene.add(group)
-
-    towers.push({ group, edges, shaft, crown, glow, solid, floors, height, index: i })
-    pickables.push(solid)
-    birth.push(start + i * 45)
-
-    disposables.push(
-      solidGeometry,
-      solidMaterial,
-      edgeSource,
-      edgeGeometry,
-      edgeMaterial,
-      floorGeometry,
-      floorMaterial,
-      panelTexture,
-      shaftMaterial,
-      crownMaterial,
-      glowMaterial,
-      contactMaterial,
-    )
+    return { ...node, group, halo, corona, core, flare, vertical, hit, energy: 1, label: labelsEl.querySelector<HTMLElement>(`[data-node="${node.index}"]`) }
   })
+  const pickables = stars.map((star) => star.hit)
 
-  /* ------------------------------------------------- camera & orbit ---- */
-
-  /**
-   * The spec fixes the orbit clamp at [16, 66] and the resting target at
-   * (0, 7, 0), but not the opening distance. A fixed 40 crops the cluster, and
-   * a fixed target of y=7 puts a 30-unit tower's beacon outside the frustum —
-   * you cannot see the peak of the skyline the chamber is supposed to be.
-   *
-   * So both are derived from the cluster that actually exists: the resting
-   * target lifts toward the middle of the skyline (never below the spec's 7),
-   * and the radius is whatever puts the tallest beacon inside the vertical
-   * frustum with a margin. Small clusters land close to the spec's numbers;
-   * only tall ones pull back.
-   */
-  const tallest = towers.reduce((max, tower) => Math.max(max, tower.height), 12)
-  const widest = towers.reduce(
-    (max, tower) => Math.max(max, Math.hypot(tower.group.position.x, tower.group.position.z)),
-    4,
-  )
-  const restHeight = Math.max(7, tallest * 0.38)
-  const halfFov = Math.tan((camera.fov * Math.PI) / 360)
-  // Headroom covers the crown and the base of the light shaft; the shaft's soft
-  // tip is allowed to leave the frame rather than shrinking the whole cluster.
-  const needed = Math.max(tallest + 6 - restHeight, restHeight)
-  /*
-   * `needed / halfFov` is the distance at which the cluster fits — but that is
-   * the distance to its CENTRE, and the towers on the near side sit `widest`
-   * closer to the camera, where they project correspondingly larger and fall
-   * out of frame. Adding the spread back puts the near face at that distance
-   * instead, which is what actually has to fit.
-   */
-  const framingRadius = Math.max(16, Math.min(100, widest + needed / halfFov))
-
-  const state = {
-    theta: 0.8,
-    phi: 1.1,
-    radius: framingRadius,
-    targetTheta: 0.8,
-    targetPhi: 1.1,
-    targetRadius: framingRadius,
-    target: new Vector3(0, restHeight, 0),
-    desiredTarget: new Vector3(0, restHeight, 0),
-    lastInteraction: performance.now(),
-    hovered: null as number | null,
-    selected: null as number | null,
-    paused: false,
-    lowFps: false,
-    running: true,
-    lastFrame: 0,
+  /* Curved axons. A shader sends light down the actual curve, not across its chord. */
+  const signals = layout.links.map(([a, b], index) => {
+    const start = stars[a].group.position
+    const end = stars[b].group.position
+    const middle = start.clone().lerp(end, 0.5)
+    const bend = new Vector3().crossVectors(end.clone().sub(start), new Vector3(0.3, 1, 0.2)).normalize()
+    middle.addScaledVector(bend, (index % 2 ? 1 : -1) * start.distanceTo(end) * 0.16)
+    return { a, b, curve: new QuadraticBezierCurve3(start, middle, end), phase: random(), speed: 0.13 + random() * 0.12 }
+  })
+  const filamentGeometries: BufferGeometry[] = []
+  signals.forEach((signal) => {
+    for (let strand = 0; strand < 3; strand++) {
+      const curve = new QuadraticBezierCurve3(signal.curve.v0, signal.curve.v1.clone().add(new Vector3(0, (strand - 1) * 1.9, (strand - 1) * 0.9)), signal.curve.v2)
+      const geometry = new TubeGeometry(curve, 40, strand === 1 ? 0.035 : 0.012, 4, false)
+      const count = geometry.attributes.position.count
+      geometry.setAttribute('signal', new BufferAttribute(new Float32Array(Array.from({ length: count }, () => [signal.phase, signal.speed, signal.a, signal.b]).flat()), 4))
+      geometry.setAttribute('strength', new BufferAttribute(new Float32Array(count).fill(strand === 1 ? 1 : 0.32), 1))
+      filamentGeometries.push(geometry)
+    }
+  })
+  const uniforms = { time: { value: 0 }, focus: { value: -1 }, hover: { value: -1 }, reveal: { value: reducedMotion ? 1 : 0 } }
+  if (filamentGeometries.length) {
+    const geometry = own(mergeGeometries(filamentGeometries)!)
+    filamentGeometries.forEach((item) => item.dispose())
+    const material = own(new ShaderMaterial({
+      uniforms, transparent: true, depthWrite: false, blending: AdditiveBlending,
+      vertexShader: `attribute vec4 signal;
+        attribute float strength;
+        varying vec2 vUv;
+        varying vec4 vSignal;
+        varying float vStrength;
+        void main() {
+          vUv = uv; vSignal = signal; vStrength = strength;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `uniform float time, focus, hover, reveal;
+        varying vec2 vUv;
+        varying vec4 vSignal;
+        varying float vStrength;
+        void main() {
+          float head = fract(time * vSignal.y + vSignal.x);
+          float trail = mod(head - vUv.x + 1.0, 1.0);
+          float pulse = exp(-trail * 38.0);
+          bool connected = abs(focus - vSignal.z) < 0.1 || abs(focus - vSignal.w) < 0.1;
+          bool hovered = abs(hover - vSignal.z) < 0.1 || abs(hover - vSignal.w) < 0.1;
+          float emphasis = focus < 0.0 ? (hovered ? 1.7 : 1.0) : (connected ? 1.7 : 0.17);
+          vec3 color = mix(vec3(0.07, 0.32, 0.55), vec3(0.65, 0.94, 1.0), pulse);
+          gl_FragColor = vec4(color, (0.35 + pulse * 0.65) * vStrength * emphasis * reveal);
+        }`,
+    }))
+    scene.add(new Mesh(geometry, material))
   }
 
-  const clampPhi = (value: number) => Math.max(0.55, Math.min(1.42, value))
-  /*
-   * The spec caps the orbit at 66. A cluster spread wide enough that its towers
-   * do not visually collide has to be framed from further out than that, and
-   * the clamp only ever bounded how far a visitor may zoom.
-   */
-  const clampRadius = (value: number) => Math.max(16, Math.min(100, value))
+  // One particle batch for every luminous pulse and its tapering tail.
+  const pulsePositions = new Float32Array(signals.length * TRAIL_LENGTH * 3)
+  const pulseColors = new Float32Array(pulsePositions.length)
+  const pulseGeometry = own(new BufferGeometry())
+  pulseGeometry.setAttribute('position', new BufferAttribute(pulsePositions, 3))
+  pulseGeometry.setAttribute('color', new BufferAttribute(pulseColors, 3))
+  const pulseMaterial = own(new PointsMaterial({ map: glow, size: 1.1, vertexColors: true, opacity: 0.95, transparent: true, depthWrite: false, blending: AdditiveBlending }))
+  const pulses = new Points(pulseGeometry, pulseMaterial)
+  pulses.frustumCulled = false
+  scene.add(pulses)
 
-  let dragging = false
-  let pointerX = 0
-  let pointerY = 0
-  let moved = 0
-  /*
-   * `pointerup` is bound to the window so a drag that leaves the canvas still
-   * ends cleanly. Without tracking where the gesture STARTED, though, every
-   * click anywhere on the page ran the raycast and deselected — including
-   * clicks on the record panel, which is why selecting a second tower always
-   * came from a cleared selection and never played its transition.
-   */
-  let gestureOnCanvas = false
-  const activePointers = new Map<number, { x: number; y: number }>()
-  let pinchDistance = 0
-
+  /* Spherical camera with a frustum offset for the record panel. */
+  let framingRadius = 80
+  let viewShift = 0
+  let leftInset = 0
+  const state = {
+    theta: 0.45, phi: 1.2, radius: 80, targetTheta: 0.45, targetPhi: 1.2, targetRadius: 80,
+    target: new Vector3(), desiredTarget: new Vector3(),
+    hovered: null as number | null, selected: null as number | null,
+    lastInteraction: performance.now(), lowFps: false, paused: document.hidden, running: true,
+  }
+  const clampRadius = (radius: number) => Math.max(16, Math.min(framingRadius * 2.2, radius))
+  const focusRadius = () => Math.max(24, framingRadius * 0.72)
+  const projected = new Vector3()
   const raycaster = new Raycaster()
   const pointer = new Vector2()
-  const projected = new Vector3()
-
-  const pick = (event: { clientX: number; clientY: number }): number | null => {
+  const pick = ({ clientX, clientY }: { clientX: number; clientY: number }) => {
     const rect = canvas.getBoundingClientRect()
-    pointer.set(
-      ((event.clientX - rect.left) / rect.width) * 2 - 1,
-      -((event.clientY - rect.top) / rect.height) * 2 + 1,
-    )
+    pointer.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
     raycaster.setFromCamera(pointer, camera)
-    const hit = raycaster.intersectObjects(pickables, false)[0]
-    return hit ? ((hit.object.userData.index as number) ?? null) : null
+    return (raycaster.intersectObjects(pickables, false)[0]?.object.userData.index as number | undefined) ?? null
   }
-
-  const setHovered = (index: number | null) => {
+  const highlight = (index: number | null) => {
     if (state.hovered === index) return
     state.hovered = index
     canvas.style.cursor = index === null ? 'grab' : 'pointer'
-    if (index === null || state.selected !== null) {
-      chipEl.style.display = 'none'
-    } else {
-      chipEl.style.display = 'block'
-    }
+    chipEl.style.display = index !== null && state.selected === null ? 'block' : 'none'
     options.onHoverChange(index)
   }
-
-  /**
-   * How close a selected tower is framed, as a fraction of the framing distance.
-   * Absolute, never relative to where the camera already is — deriving it from
-   * the current radius compounded on every click and walked the camera into the
-   * cluster.
-   */
-  const focusRadius = Math.max(24, framingRadius * 0.72)
-
   const select = (index: number | null) => {
-    if (index === null) {
-      state.selected = null
-      // Closing the card is the only thing that pulls the camera back out.
-      state.desiredTarget.set(0, restHeight, 0)
-      state.targetRadius = framingRadius
-      options.onSelectChange(null)
-      return
-    }
-    const tower = towers[index]
-    if (!tower) return
-
+    if (index !== null && !stars[index]) return
     state.selected = index
-    chipEl.style.display = 'none'
-    state.desiredTarget.set(tower.group.position.x * 0.6, tower.height * 0.4, tower.group.position.z * 0.6)
-
-    /*
-     * Moving between towers holds the zoom and simply pans across — the camera
-     * only pulls back when the card is closed. Changing distance on every switch
-     * made a browse through several records feel like it was breathing.
-     */
-    state.targetRadius = focusRadius
     state.lastInteraction = performance.now()
+    chipEl.style.display = 'none'
+    if (index === null) {
+      state.desiredTarget.set(0, 0, 0)
+      state.targetRadius = framingRadius
+    } else {
+      state.desiredTarget.copy(stars[index].group.position).multiplyScalar(0.65)
+      state.targetRadius = focusRadius()
+    }
     options.onSelectChange(index)
   }
+  const zoom = (factor: number) => {
+    state.targetRadius = clampRadius(state.targetRadius * factor)
+    state.lastInteraction = performance.now()
+  }
+  const reset = () => {
+    select(null)
+    state.targetTheta = 0.45
+    state.targetPhi = 1.2
+  }
 
-  /* ------------------------------------------------------- listeners ---- */
-
+  const activePointers = new Map<number, { x: number; y: number }>()
+  let moved = 0
+  let pinched = false
+  let pinchDistance = 0
   const onPointerDown = (event: PointerEvent) => {
-    if (state.lowFps) return
-    gestureOnCanvas = true
+    if (state.lowFps || event.button !== 0) return
+    if (!activePointers.size) { moved = 0; pinched = false }
     activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (activePointers.size === 1) {
-      dragging = true
-      moved = 0
-      pointerX = event.clientX
-      pointerY = event.clientY
-    } else if (activePointers.size === 2) {
-      dragging = false
+    if (activePointers.size === 2) {
+      pinched = true
       const [a, b] = Array.from(activePointers.values())
       pinchDistance = Math.hypot(a.x - b.x, a.y - b.y)
     }
     state.lastInteraction = performance.now()
-    canvas.setPointerCapture?.(event.pointerId)
+    canvas.setPointerCapture(event.pointerId)
   }
-
   const onPointerMove = (event: PointerEvent) => {
     if (state.lowFps) return
-    if (activePointers.has(event.pointerId)) {
+    const previous = activePointers.get(event.pointerId)
+    if (previous) {
       activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    }
-
-    if (activePointers.size === 2) {
-      const [a, b] = Array.from(activePointers.values())
-      const distance = Math.hypot(a.x - b.x, a.y - b.y)
-      if (pinchDistance > 0) {
-        state.targetRadius = clampRadius(state.targetRadius + (pinchDistance - distance) * 0.06)
+      if (activePointers.size === 2) {
+        const [a, b] = Array.from(activePointers.values())
+        const distance = Math.hypot(a.x - b.x, a.y - b.y)
+        if (distance && pinchDistance) zoom(pinchDistance / distance)
+        pinchDistance = distance
+      } else {
+        const dx = event.clientX - previous.x
+        const dy = event.clientY - previous.y
+        moved += Math.abs(dx) + Math.abs(dy)
+        state.targetTheta -= dx * 0.005
+        state.targetPhi = Math.max(0.12, Math.min(Math.PI - 0.12, state.targetPhi - dy * 0.005))
       }
-      pinchDistance = distance
       state.lastInteraction = performance.now()
-      return
-    }
-
-    if (dragging) {
-      const dx = event.clientX - pointerX
-      const dy = event.clientY - pointerY
-      moved += Math.abs(dx) + Math.abs(dy)
-      state.targetTheta -= dx * 0.006
-      state.targetPhi = clampPhi(state.targetPhi - dy * 0.004)
-      pointerX = event.clientX
-      pointerY = event.clientY
-      state.lastInteraction = performance.now()
-    }
-
-    if (event.pointerType !== 'touch') setHovered(pick(event))
+      highlight(null)
+    } else if (event.pointerType !== 'touch') highlight(pick(event))
   }
-
   const onPointerUp = (event: PointerEvent) => {
-    if (state.lowFps) return
-    const startedHere = gestureOnCanvas
-    const wasDragging = dragging && moved > 6
-    gestureOnCanvas = false
+    if (!activePointers.has(event.pointerId)) return
     activePointers.delete(event.pointerId)
-    if (activePointers.size < 2) pinchDistance = 0
-    if (activePointers.size === 0) dragging = false
-    canvas.releasePointerCapture?.(event.pointerId)
-
-    // Only a gesture that began on the canvas counts as a click on the scene,
-    // and a drag must never be read as a click on a tower.
-    if (startedHere && !wasDragging && event.type === 'pointerup') {
-      const index = pick(event)
-      if (index !== null) select(index)
-      else if (state.selected !== null) select(null)
-    }
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
+    if (moved <= 6 && !pinched && event.type === 'pointerup') select(pick(event))
   }
-
   const onWheel = (event: WheelEvent) => {
     if (state.lowFps) return
     event.preventDefault()
-    state.targetRadius = clampRadius(state.targetRadius + event.deltaY * 0.03)
-    state.lastInteraction = performance.now()
+    const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.clientHeight : 1)
+    zoom(Math.exp(Math.max(-300, Math.min(300, delta)) * 0.001))
   }
-
-  const onPointerLeave = () => {
-    setHovered(null)
-    dragging = false
-    activePointers.clear()
-  }
-
-  /*
-   * Composition offset. The record panel occupies the left of the frame, so the
-   * cluster is pushed right by shifting the frustum rather than moving the
-   * scene — the orbit maths stays centred on the cluster, and `project()` still
-   * returns correct screen positions for the chip and popup because it reads
-   * the same offset projection matrix.
-   */
-  let viewShift = 0
-  let leftInset = 0
-
+  const onPointerLeave = () => { if (!activePointers.size) highlight(null) }
   const resize = () => {
     const width = canvas.clientWidth || window.innerWidth
     const height = canvas.clientHeight || window.innerHeight
+    const previous = framingRadius
     renderer.setSize(width, height, false)
     camera.aspect = width / Math.max(height, 1)
-    if (viewShift !== 0) {
-      camera.setViewOffset(width, height, -viewShift * width, 0, width, height)
-    } else {
-      camera.clearViewOffset()
-    }
+    if (viewShift) camera.setViewOffset(width, height, -viewShift * width, 0, width, height)
+    else camera.clearViewOffset()
     camera.updateProjectionMatrix()
+    const halfFov = camera.fov * Math.PI / 360
+    const availableAspect = Math.min(1, camera.aspect * (1 - viewShift * 2.2))
+    framingRadius = Math.max(38, layout.extent / Math.sin(halfFov) / availableAspect * 1.08)
+    state.targetRadius *= framingRadius / previous
+    state.radius *= framingRadius / previous
   }
-
-  const onVisibility = () => {
-    state.paused = document.hidden
-  }
-
+  const onVisibility = () => { state.paused = document.hidden }
   canvas.addEventListener('pointerdown', onPointerDown)
   canvas.addEventListener('pointermove', onPointerMove)
   canvas.addEventListener('pointerleave', onPointerLeave)
@@ -664,141 +306,120 @@ export const createChamber = (options: ChamberOptions) => {
   canvas.addEventListener('wheel', onWheel, { passive: false })
   window.addEventListener('resize', resize)
   document.addEventListener('visibilitychange', onVisibility)
-
   resize()
   canvas.style.cursor = 'grab'
+  canvas.dataset.scene = 'neural-map'
+  canvas.dataset.nodes = String(stars.length)
+  canvas.dataset.connections = String(signals.length)
 
-  /* ------------------------------------------------------------ loop ---- */
-
+  /* DOM projections are written directly, not sent through React every frame. */
   let frame = 0
   let announced = false
+  let lastFrame = performance.now()
+  let time = 0
   let lastReportedRadius = -1
-
+  const point = new Vector3()
+  const signalColor = new Color(0x8deaff)
+  const arrivals = new Float32Array(stars.length)
   const tick = () => {
     if (!state.running) return
     frame = requestAnimationFrame(tick)
-
     const now = performance.now()
-    if (state.paused) return
-    if (state.lowFps && now - state.lastFrame < CARDS_FRAME_INTERVAL) return
-    state.lastFrame = now
-
-    if (!reducedMotion && now - state.lastInteraction > IDLE_BEFORE_AUTOROTATE && state.selected === null) {
-      state.targetTheta += 0.0012
-    }
-
-
-    state.theta += (state.targetTheta - state.theta) * 0.08
-    state.phi += (state.targetPhi - state.phi) * 0.08
-    state.radius += (state.targetRadius - state.radius) * 0.08
-    state.target.lerp(state.desiredTarget, 0.06)
-
+    if (state.paused) { lastFrame = now; return }
+    if (state.lowFps && now - lastFrame < 100) return
+    const dt = Math.min(0.1, (now - lastFrame) / 1000)
+    lastFrame = now
+    if (!reducedMotion) time += dt
+    const damping = reducedMotion ? 1 : 1 - Math.exp(-7 * dt)
+    if (!reducedMotion && now - state.lastInteraction > IDLE_BEFORE_AUTOROTATE && state.selected === null && state.hovered === null && !activePointers.size) state.targetTheta += dt * 0.035
+    state.theta += (state.targetTheta - state.theta) * damping
+    state.phi += (state.targetPhi - state.phi) * damping
+    state.radius += (state.targetRadius - state.radius) * damping
+    state.target.lerp(state.desiredTarget, damping)
     camera.position.set(
       state.target.x + state.radius * Math.sin(state.phi) * Math.sin(state.theta),
       state.target.y + state.radius * Math.cos(state.phi),
       state.target.z + state.radius * Math.sin(state.phi) * Math.cos(state.theta),
     )
     camera.lookAt(state.target)
-
-    if (!reducedMotion) particles.rotation.y = now * 0.00002
-
-    for (const tower of towers) {
-      const i = tower.index
-      if (tower.group.scale.y < 1 && now > birth[i]) {
-        tower.group.scale.y = Math.min(1, tower.group.scale.y + 0.045)
+    camera.updateMatrixWorld()
+    uniforms.time.value = time
+    uniforms.focus.value = state.selected ?? -1
+    uniforms.hover.value = state.hovered ?? -1
+    uniforms.reveal.value = reducedMotion ? 1 : Math.min(1, time / 1.4)
+    arrivals.fill(0)
+    signals.forEach((signal, index) => {
+      const head = (time * signal.speed + signal.phase) % 1
+      arrivals[signal.b] = Math.max(arrivals[signal.b], Math.max(0, (head - 0.87) / 0.13))
+      const dim = state.selected === null || state.selected === signal.a || state.selected === signal.b ? 1 : 0.15
+      for (let trail = 0; trail < TRAIL_LENGTH; trail++) {
+        const t = head - trail * 0.006
+        signal.curve.getPoint(Math.max(0, t), point)
+        const offset = (index * TRAIL_LENGTH + trail) * 3
+        point.toArray(pulsePositions, offset)
+        const energy = t < 0 ? 0 : Math.pow(1 - trail / TRAIL_LENGTH, 2) * dim * uniforms.reveal.value
+        pulseColors[offset] = signalColor.r * energy
+        pulseColors[offset + 1] = signalColor.g * energy
+        pulseColors[offset + 2] = signalColor.b * energy
       }
-
-      const isSelected = state.selected === i
-      const isHovered = state.hovered === i
-      const dimmed = state.selected !== null && !isSelected
-
-      const edgeTarget = dimmed ? 0.2 : isSelected || isHovered ? 1 : 0.7
-      const edgeMaterial = tower.edges.material as LineBasicMaterial
-      edgeMaterial.opacity += (edgeTarget - edgeMaterial.opacity) * 0.15
-
-      const glowMaterial = tower.glow.material as SpriteMaterial
-      const glowTarget = dimmed ? 0.05 : isSelected || isHovered ? 0.34 : 0.16
-      glowMaterial.opacity += (glowTarget - glowMaterial.opacity) * 0.12
-
-      const pulse = Math.abs(Math.sin(now * 0.002 + i)) * (dimmed ? 0.3 : 1)
-      const lift = isSelected || isHovered ? 1.8 : 1
-      ;(tower.shaft.material as SpriteMaterial).opacity = (0.12 + 0.13 * pulse) * lift
-      ;(tower.crown.material as SpriteMaterial).opacity = (0.24 + 0.2 * pulse) * lift
-
-      if (isHovered && state.selected === null) {
-        projected.set(tower.group.position.x, tower.height + 2.4, tower.group.position.z).project(camera)
-        chipEl.style.left = `${(projected.x * 0.5 + 0.5) * canvas.clientWidth}px`
-        chipEl.style.top = `${(-projected.y * 0.5 + 0.5) * canvas.clientHeight}px`
+    })
+    pulseGeometry.attributes.position.needsUpdate = true
+    pulseGeometry.attributes.color.needsUpdate = true
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
+    const occupied: { x: number; y: number; w: number }[] = []
+    for (const star of stars) {
+      const selected = state.selected === star.index
+      const hovered = state.hovered === star.index
+      const dimmed = state.selected !== null && !selected
+      const energy = dimmed ? 0.32 : selected || hovered ? 1.65 : 1
+      star.energy += (energy - star.energy) * damping
+      const pulse = reducedMotion ? 1 : 1 + Math.sin(time * 1.65 + star.phase) * 0.09 + arrivals[star.index] * 0.09
+      const reveal = reducedMotion ? 1 : Math.min(1, Math.max(0, (time - star.index * 0.025) / 0.8))
+      star.group.scale.setScalar(pulse)
+      star.halo.material.opacity = 0.5 * star.energy * reveal
+      star.corona.material.opacity = 0.8 * star.energy * reveal
+      star.core.material.opacity = (dimmed ? 0.65 : 1) * reveal
+      star.flare.material.opacity = 0.6 * star.energy * reveal
+      star.vertical.material.opacity = 0.3 * star.energy * reveal
+      projected.copy(star.group.position).project(camera)
+      const x = (projected.x * 0.5 + 0.5) * width
+      const y = (-projected.y * 0.5 + 0.5) * height
+      const inView = projected.z < 1 && projected.z > -1 && x > leftInset + 12 && x < width - 36 && y > 140 && y < height - 85
+      if (star.label) {
+        const labelWidth = star.label.offsetWidth
+        const left = x + 19 + labelWidth > width - 24 ? x - 19 - labelWidth : x + 19
+        const collision = occupied.some((other) => Math.abs(other.y - y) < 34 && left < other.x + other.w + 12 && left + labelWidth > other.x - 12)
+        const show = inView && (!collision || hovered || selected) && (!dimmed || hovered)
+        star.label.style.visibility = show ? 'visible' : 'hidden'
+        star.label.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(y - 8)}px, 0)`
+        star.label.style.opacity = String((selected || hovered ? 1 : 0.65) * reveal)
+        if (show) occupied.push({ x: left, y, w: labelWidth })
+      }
+      if (hovered && state.selected === null) {
+        chipEl.style.left = `${Math.max(130, Math.min(width - 130, x))}px`
+        chipEl.style.top = `${Math.max(120, y - 20)}px`
+      }
+      if (selected) {
+        const halfWidth = popupEl.offsetWidth / 2 + 20
+        const minX = leftInset + halfWidth
+        const cardHeight = popupEl.offsetHeight + 24
+        popupEl.style.left = `${Math.max(minX, Math.min(width - halfWidth, x))}px`
+        popupEl.style.top = `${Math.max(Math.min(cardHeight + NAV_CLEARANCE, height - 80), Math.min(height - 80, y - 25))}px`
       }
     }
-
-    if (state.selected !== null) {
-      const tower = towers[state.selected]
-      projected.set(tower.group.position.x, tower.height + 1.5, tower.group.position.z).project(camera)
-      const width = canvas.clientWidth
-      const height = canvas.clientHeight
-      // The card is anchored bottom-centre (translate(-50%,-100%)), so the
-      // clamp has to be driven by its measured box rather than a fixed 220/300 —
-      // a long record grows taller than the spec's reference card.
-      const halfWidth = popupEl.offsetWidth / 2 + 20
-      const minX = leftInset + halfWidth
-      const cardHeight = popupEl.offsetHeight + 24
-      const x = Math.max(minX, Math.min(width - halfWidth, (projected.x * 0.5 + 0.5) * width))
-      // Floor keeps the card clear of the fixed navbar as well as the top edge.
-      const floor = Math.min(cardHeight + NAV_CLEARANCE, height - 40)
-      const y = Math.max(floor, Math.min(height - 40, (-projected.y * 0.5 + 0.5) * height))
-      popupEl.style.left = `${x}px`
-      popupEl.style.top = `${y}px`
-    }
-
-    /*
-     * Test seam: the orbit distance is otherwise unobservable from outside the
-     * canvas, and it is the thing that used to compound on every click. Written
-     * only when it actually moves, so this is not a per-frame DOM write.
-     */
-    const reported = Math.round(state.radius)
-    if (reported !== lastReportedRadius) {
-      lastReportedRadius = reported
-      canvas.dataset.radius = String(reported)
-    }
-
+    const radius = Math.round(state.radius)
+    if (radius !== lastReportedRadius) { canvas.dataset.radius = String(radius); lastReportedRadius = radius }
     renderer.render(scene, camera)
-
-    if (!announced) {
-      announced = true
-      options.onReady()
-    }
+    if (!announced) { announced = true; options.onReady() }
   }
-
   tick()
 
-  /* ---------------------------------------------------------- public ---- */
-
   return {
-    select,
+    select, highlight, zoom, reset,
     deselect: () => select(null),
-    /** CARDS mode drops the loop to ~10fps behind the blur. */
-    setLowFps: (value: boolean) => {
-      state.lowFps = value
-      if (value) {
-        setHovered(null)
-      }
-    },
-    /** Frame the cluster on one tower without opening its popup. */
-    focusIndex: (index: number) => select(index),
-    /** Highlight a tower from outside the canvas — used by the record panel. */
-    highlight: (index: number | null) => setHovered(index),
-    /**
-     * `shift` moves the cluster right as a fraction of the viewport width;
-     * `inset` is the panel's right edge, which the popup must clear.
-     */
-    setComposition: (shift: number, inset: number) => {
-      viewShift = shift
-      leftInset = inset
-      resize()
-    },
-    towerCount: towers.length,
-    overflow: Math.max(0, nodes.length - towers.length),
+    setLowFps: (value: boolean) => { state.lowFps = value; if (value) highlight(null) },
+    setComposition: (shift: number, inset: number) => { viewShift = shift; leftInset = inset; resize() },
     dispose: () => {
       state.running = false
       cancelAnimationFrame(frame)
@@ -810,15 +431,10 @@ export const createChamber = (options: ChamberOptions) => {
       canvas.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', resize)
       document.removeEventListener('visibilitychange', onVisibility)
-
-      for (const item of disposables) item.dispose()
-      gridA.geometry.dispose()
-      ;(gridA.material as LineBasicMaterial).dispose()
-      gridB.geometry.dispose()
-      ;(gridB.material as LineBasicMaterial).dispose()
+      disposables.forEach((item) => item.dispose())
       scene.clear()
       renderer.dispose()
-      renderer.forceContextLoss?.()
+      renderer.forceContextLoss()
     },
   }
 }

@@ -71,6 +71,7 @@ export interface Config {
     experiences: Experience;
     organizations: Organization;
     awards: Award;
+    posts: Post;
     'ctf-competitions': CtfCompetition;
     'ctf-challenges': CtfChallenge;
     media: Media;
@@ -86,6 +87,7 @@ export interface Config {
     experiences: ExperiencesSelect<false> | ExperiencesSelect<true>;
     organizations: OrganizationsSelect<false> | OrganizationsSelect<true>;
     awards: AwardsSelect<false> | AwardsSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
     'ctf-competitions': CtfCompetitionsSelect<false> | CtfCompetitionsSelect<true>;
     'ctf-challenges': CtfChallengesSelect<false> | CtfChallengesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -134,7 +136,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Builds and research. Weight decides tower height in the chamber.
+ * Builds and research. Dates place records in the neural map; weight controls star size.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "projects".
@@ -214,7 +216,7 @@ export interface Project {
       }[]
     | null;
   /**
-   * Optional. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.
+   * Optional screenshot, repository view or presentation, shown on the homepage card and in the expanded record. Without one, generated wireframe artwork is used.
    */
   screenshot?: (number | null) | Media;
   /**
@@ -222,7 +224,7 @@ export interface Project {
    */
   stripArtwork?: ('auto' | 'skyline' | 'tower' | 'bridge' | 'lattice' | 'radar' | 'vault') | null;
   /**
-   * 1–5. Drives tower height in the chamber and ordering everywhere.
+   * 1–5. Controls star size in the neural map and card ordering.
    */
   weight: number;
   /**
@@ -361,13 +363,16 @@ export interface Experience {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Photo, screenshot or logo shown on the homepage card and in the expanded record.
+   */
   logo?: (number | null) | Media;
   /**
    * Derived from the dates above.
    */
   year?: number | null;
   /**
-   * 1–5. Drives tower height in the chamber and ordering everywhere.
+   * 1–5. Controls star size in the neural map and card ordering.
    */
   weight: number;
   /**
@@ -449,13 +454,16 @@ export interface Organization {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Photo, screenshot or logo shown on the homepage card and in the expanded record.
+   */
   logo?: (number | null) | Media;
   /**
    * Derived from the dates above.
    */
   year?: number | null;
   /**
-   * 1–5. Drives tower height in the chamber and ordering everywhere.
+   * 1–5. Controls star size in the neural map and card ordering.
    */
   weight: number;
   /**
@@ -532,13 +540,16 @@ export interface Award {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Event screenshot, certificate or presentation shown on the homepage card and in the expanded record.
+   */
   media?: (number | null) | Media;
   /**
    * Derived from the dates above.
    */
   year?: number | null;
   /**
-   * 1–5. Drives tower height in the chamber and ordering everywhere.
+   * 1–5. Controls star size in the neural map and card ordering.
    */
   weight: number;
   /**
@@ -556,6 +567,106 @@ export interface Award {
   published?: boolean | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * Long-form technical articles, with prose, source excerpts and captioned screenshots.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * Leave blank to derive from the title.
+   */
+  slug?: string | null;
+  excerpt: string;
+  category: 'web' | 'pwn' | 'research';
+  /**
+   * Optional, e.g. JOINTS CTF 2026.
+   */
+  event?: string | null;
+  /**
+   * Optional challenge name.
+   */
+  challenge?: string | null;
+  /**
+   * Short uppercase keywords, e.g. RUST, CRYPTO, X3DH.
+   */
+  tags?: string[] | null;
+  cover?: (number | null) | Media;
+  /**
+   * Headings automatically populate the article table of contents.
+   */
+  sections: {
+    title: string;
+    blocks: (BlogProse | BlogCode | BlogImage)[];
+    id?: string | null;
+  }[];
+  references?:
+    | {
+        label: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  publishedAt: string;
+  readingMinutes?: number | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogProse".
+ */
+export interface BlogProse {
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'prose';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogCode".
+ */
+export interface BlogCode {
+  /**
+   * Source filename or a descriptive label.
+   */
+  filename?: string | null;
+  language: 'text' | 'php' | 'apacheconf' | 'python' | 'c' | 'bash' | 'http' | 'json';
+  code: string;
+  caption?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'code';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogImage".
+ */
+export interface BlogImage {
+  image: number | Media;
+  caption: string;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'image';
 }
 /**
  * One entry per event. Challenges attach to these.
@@ -765,6 +876,10 @@ export interface PayloadLockedDocument {
         value: number | Award;
       } | null)
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
         relationTo: 'ctf-competitions';
         value: number | CtfCompetition;
       } | null)
@@ -965,6 +1080,76 @@ export interface AwardsSelect<T extends boolean = true> {
   published?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  excerpt?: T;
+  category?: T;
+  event?: T;
+  challenge?: T;
+  tags?: T;
+  cover?: T;
+  sections?:
+    | T
+    | {
+        title?: T;
+        blocks?:
+          | T
+          | {
+              prose?: T | BlogProseSelect<T>;
+              code?: T | BlogCodeSelect<T>;
+              image?: T | BlogImageSelect<T>;
+            };
+        id?: T;
+      };
+  references?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        id?: T;
+      };
+  publishedAt?: T;
+  readingMinutes?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogProse_select".
+ */
+export interface BlogProseSelect<T extends boolean = true> {
+  content?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogCode_select".
+ */
+export interface BlogCodeSelect<T extends boolean = true> {
+  filename?: T;
+  language?: T;
+  code?: T;
+  caption?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BlogImage_select".
+ */
+export interface BlogImageSelect<T extends boolean = true> {
+  image?: T;
+  caption?: T;
+  id?: T;
+  blockName?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

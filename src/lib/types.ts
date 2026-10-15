@@ -25,15 +25,17 @@ export interface SurveyItem {
   periodLabel: string | null
   /** `AUG 2026` when a month is known, otherwise just the year. */
   dateLabel: string
+  /** Start/event date, when known, for chronological placement in the neural map. */
+  date?: string | null
   year: number
   weight: number
   tags: string[]
   mosaicSpan: MosaicSpan
   featured: boolean
   featuredOrder: number | null
-  /** Wireframe motif key — the fallback when there is no screenshot. */
+  /** Wireframe motif key — the fallback when there is no uploaded image. */
   artwork: string
-  /** Real screenshot of the running project, when one exists. */
+  /** Uploaded screenshot, photo or logo, when one exists. */
   image: SurveyImage | null
   /** Your part in it, when it needs saying. */
   role: string | null
@@ -49,7 +51,7 @@ export interface SurveyLink {
   url: string
 }
 
-/** An optional real screenshot. Absent means the wireframe artwork is used. */
+/** An optional uploaded image. Absent means the wireframe artwork is used. */
 export interface SurveyImage {
   url: string
   width: number
@@ -68,6 +70,7 @@ export interface ChamberNode {
   sublabel: string
   weight: number
   year: number
+  date?: string | null
 }
 
 /** Lazily fetched popup body. */

@@ -1,9 +1,9 @@
 # HOLOGRID
 
 Portfolio site for **M. Ahsan Zaki Wiryawan** — a white, minimal, engineering-flavoured
-survey document. Opening any section steps into a **hologram chamber**: the page inverts to
-deep blue-black and the section's items materialise as a glowing cluster of cyan wireframe
-towers you can orbit. A toggle switches to **MOSAIC** — one connected slab of translucent
+survey document. Opening any section steps into a **3D neural map**: the page inverts to
+deep blue-black and each record becomes a glowing star connected by curved electric pathways.
+Older records sit near the core; newer records extend outward. A toggle switches to **CARDS** — one connected slab of translucent
 cells. Everything is content-managed through Payload.
 
 Built to `docs/portfolio-spec-v2.md`; `docs/portfolio-prototype-v3.html` is the visual
@@ -57,24 +57,24 @@ npm run dev                   # http://localhost:3000, admin at /admin
 
 ---
 
-## Project screenshots
+## Card images
 
-`seed-assets/` holds the images the seed uploads into Payload media on first run. They were
-captured from the projects themselves rather than mocked up:
+`seed-assets/` holds the images the seed uploads into Payload media on first run. They include
+project screenshots, repository views, event listings, certificates and presentation covers:
 
 | Source | Projects |
 |---|---|
 | Screenshots the repo already published | NetGuard, AutoSIEM, BHOB |
 | Cloned and run locally, then captured | AeroRoute (Vite dev server), RedOps Collab (prototype, driven through its demo login), CloudLibrary (static front end — the droplet is offline) |
 | Live site | BEM UGM, 180DC UGM |
+| Owner-supplied images | Repository screenshots, CrediWise's Garuda Hacks presentation, the DCSE certificate, CTF events, and organization profiles |
 
-Four projects have no screenshot and fall back to wireframe artwork. CrediWise is a SwiftUI app
-with a FastAPI backend and has no web UI to capture; Acme Market, the Penetration Testing Labs
-and the CTF Library challenges are **intentionally vulnerable services** (upload RCE, SUID
-escalation, SQL injection) and were deliberately not stood up to take a picture of.
+CrediWise and its Garuda Hacks award share the presentation cover. Projects, experience,
+organizations and awards reuse existing media when they share an image. Records without an
+image, including CTF Library, fall back to wireframe artwork.
 
-To add or replace one, upload it against the project in `/admin` — the field is optional and
-nothing else has to change.
+To add or replace one, use **Card image** on the record in `/admin`. The optional upload appears
+on the homepage card and in the expanded record.
 
 ## Content model
 
@@ -83,7 +83,8 @@ Four **survey collections** share one shape and one set of controls:
 
 | Field | What it drives |
 |---|---|
-| `weight` (1–5) | Tower height in the chamber, ordering everywhere, and which items surface first. Index 0 is the tallest and sits at the centre of the cluster. |
+| `weight` (1–5) | Star size in the neural map, card ordering, and which items surface first. |
+| Date / start date, falling back to `year` | Radial chronology in the neural map: oldest at the core, newest at the edges. |
 | `mosaicSpan` | `auto` lets the pattern algorithm decide; `2` / `3` / `4` pins a cell width for flagship work. |
 | `featured` + `featuredOrder` | Membership and order in that section's homepage card strip. |
 | `subtag` | The short mono tag beside the title. Defaults to the first tag. |
@@ -91,7 +92,7 @@ Four **survey collections** share one shape and one set of controls:
 | `description` | Rich text, fetched lazily when a popup opens — it never ships with the page. |
 | `published` | Unpublished documents are invisible to the public site. |
 | `stripArtwork` *(projects)* | Which wireframe motif draws when there is no screenshot. `auto` picks one from the slug. |
-| `screenshot` *(projects)* | **Optional** upload. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one the generated wireframe artwork is used, so no project ever looks broken for lacking an image. |
+| `screenshot` *(projects)* / `logo` *(experience, organizations)* / `media` *(awards)* | **Optional** upload, labelled **Card image** in the admin. Shown on the homepage card and in the expanded mosaic cell; otherwise generated wireframe artwork is used. |
 | `repoUrl` / `liveUrl` *(projects)* | Drive the GITHUB and LIVE buttons. Anything else goes in `links`. |
 | `role` *(projects)* | Your part in it, when it needs saying — e.g. Security engineer, IT manager. |
 
@@ -102,6 +103,24 @@ area: `/ctf` lists only competitions with at least one challenge in the active m
 
 `profile` is a global: identity, hero lines, about copy, focus areas, skills, education,
 socials, CV link, and SEO defaults.
+
+### Blog
+
+`posts` is the **Blog posts** collection under **Writing** in `/admin`. Each article has
+an excerpt, category, event, tags, optional cover, and sections composed of rich text,
+syntax-highlighted source excerpts and captioned images. Section headings generate the
+table of contents, and reading time is recalculated when the article is saved.
+
+New posts start unpublished. Publishing updates `/blog`, the article, the homepage preview
+and the sitemap. Renaming a slug also invalidates the old article URL.
+
+The original JOINTS CTF setter notes live in `src/seed/posts.ts`. Run `npm run seed:blog`
+to upload their screenshots and populate those two articles in the local CMS. The full
+seed includes them as well. The blog uses the existing paper palette, with a dedicated
+reading layout and server-rendered syntax highlighting.
+
+The homepage previews the two latest posts above Toolkit, under “Behind the challenge”.
+Homepage previews use smaller cover images and a narrower card group than the blog listing.
 
 ---
 
@@ -133,20 +152,28 @@ The camera runs on keyframed stations interpolated over the damped scroll positi
 fade in scroll bands and toggle `visible` so only the current act renders; fog tightens
 for the white acts and opens up with the city.
 
-## The chamber frame
+## The neural map
 
-The cluster is pushed into the right of the frame by a frustum offset
+`src/lib/neuralMap.ts` builds a deterministic, chronological 3D layout and a connected
+neighbourhood graph. It preserves original record indices so labels, panel buttons and
+raycasting all open the same record. The map renders up to 48 records; cards show the rest.
+
+Soft additive sprites make borderless stars with white cores, cyan halos and diffraction
+rays. Curved filaments carry shader-driven signals, with particle trails following those
+same curves and a brief glow at the receiving node. A distant, faint web gives the map depth.
+
+The map is pushed into the right of the frame by a frustum offset
 (`camera.setViewOffset`) rather than by moving the scene — the orbit maths stays
-centred on the cluster and `project()` still returns correct screen positions, so the
+centred on the map and `project()` still returns correct screen positions, so the
 hover chip and the popup keep tracking.
 
-The space that leaves is the **record panel**: section heading, blurb, and every record
-with its weight. It is functional, not decoration — hovering a row lights its tower,
-clicking one flies the camera to it and opens its card, and the popup clamps to the right
-of the panel so the two never overlap. It doubles as the scene's accessible list, which is
-why the canvas can stay `aria-hidden`.
+The **record panel** highlights five records and explains the radial chronology. Hovering
+a row lights its star; selecting it frames the star and opens its card. Projected labels
+also act as keyboard-accessible record buttons. Popups stay clear of the panel and navbar.
+Drag to orbit in any direction; scroll, pinch or use the zoom buttons to move closer.
+Reset restores the opening view. Background motion pauses while the tab is hidden.
 
-Below 1180px the panel would crowd the cluster, so it hides, the chamber recentres, and
+Below 1180px the panel would crowd the map, so it hides, the map recentres, and
 the visually-hidden list takes over again.
 
 ## The two detail surfaces
@@ -154,9 +181,9 @@ the visually-hidden list takes over again.
 The same record answers a different question depending on where you open it, so it is
 deliberately shown two different ways:
 
-| | GRID (chamber) | CARDS (mosaic) |
+| | NEURAL MAP | CARDS (mosaic) |
 |---|---|---|
-| Form | Glass popup anchored to the tower | Cell expanded inline at full block width |
+| Form | Glass popup anchored to the star | Cell expanded inline at full block width |
 | Content | Summary, tech stack, links | Screenshot, full write-up, tech stack, links |
 | Fetches rich text | No | Yes, once per record |
 | Dismiss | ✕, Escape, or click empty space | ✕ or Escape |
@@ -202,11 +229,12 @@ and `?mode=` are read and written on the client via `history.replaceState`.
 | `npm run dev` | Dev server |
 | `npm run build` / `npm start` | Production build and serve |
 | `npm run seed [-- --fresh]` | Placeholder content, idempotent |
+| `npm run seed:blog` | Seed the two JOINTS CTF author posts and their screenshots |
 | `npm run migrate` | Apply migrations (required in production — schema push is dev-only) |
 | `npm run migrate:create <name>` | Generate a migration after a schema change |
 | `npm run generate:types` | Regenerate `src/payload-types.ts` and the admin import map |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run test:unit` | Mosaic layout invariants + placement derivation |
+| `npm run test:unit` | Mosaic layout, podium derivation, and neural-map invariants |
 | `npm run test:e2e` | Browser behaviour suite (needs a server on `$BASE`) |
 | `npm run budget` | Measures the spec §10 performance budgets against a running build |
 
@@ -229,15 +257,13 @@ Commit the generated migration — production applies it on container start.
   row gives the connected block a ragged edge, the one thing this layout cannot have) and
   that editor pins survive at realistic density.
 - **Placement derivation** — a semifinal is not a final; 4th place is not a podium.
-- **Cluster spacing** — no two towers may overlap on the floor plan, at every section size
-  with every record at maximum weight. Towers are axis-aligned *boxes*, so the check measures
-  the nearest-axis gap; an earlier version compared Euclidean centre distance and passed a
-  visibly overlapping pair, because two squares on a diagonal touch long before their centres
-  suggest it.
+- **Neural map** — chronological 3D distances, non-overlapping star hit areas, graph
+  connectivity, deterministic positions, stable source indices, valid links and the node
+  budget, including empty/single-record maps and missing dates.
 
 `npm run test:e2e` drives a real browser over the built site: mode toggle and its
-persistence, mosaic → chamber fly-in, `?focus=` deep links, popup clamping, CTF mode
-filtering and the accordion, the reduced-motion and mobile fallbacks, markup semantics, and
+persistence, orbit and zoom controls, `?focus=` deep links, popup clamping, homepage spacing
+and blog placement, the reduced-motion and mobile fallbacks, markup semantics, and
 `dispose()` across ten chamber navigations.
 
 ```bash
@@ -250,8 +276,8 @@ Current measurements (transferred, compressed):
 
 | Route | Route JS | 3D chunk | Page total |
 |---|---|---|---|
-| `/` | 174 KB | 131 KB | 441 KB |
-| `/projects` | 171 KB | 131 KB | 413 KB |
+| `/` | 178.8 KB | 132.3 KB | 458.7 KB |
+| `/projects` | 176.1 KB | 132.3 KB | 423.8 KB |
 
 Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
 
@@ -313,7 +339,8 @@ section arranges its three differently, set by `stripLayout` in the section regi
 scrolling the page does not read as the same block four times: a wide lead beside a narrow
 stack, the same mirrored, three equal columns, and a wide lead above a pair. Motifs are
 chosen per section as well as per card, so no two sections land on the same trio. Artwork fills each card with the title laid over its bottom edge
-and the mono meta sitting outside beneath it. Hover tilts the media only, so the small type below stays crisp.
+and the mono meta sitting outside beneath it. Card groups cap at 1120px, with generous
+36–72px gutters and compact landscape media. Hover tilts the media only, so the small type below stays crisp.
 
 **Sections and CTF — "03 Sacred Craft".** One connected block. Cells share 1px hairlines with
 **zero gaps and zero border-radius**, and hover states are always **inset** — an inset ring
@@ -326,10 +353,9 @@ six columns and the slab stays welded. The whole cell is the hit target — the 
 the heading and stretches over the slab, which means nothing between it and `.cell` may be
 positioned or the hit area collapses back to that element's box.
 
-**Both blocks sit in the page shell** — inset ~3.3% from each viewport edge, matching the
-reference, and capped at 1760px so an ultrawide doesn't stretch a six-column mosaic. Nav,
-chapters, card blocks and footer all share that shell, so everything lines up on one left
-edge. Near-full-width, but never flush to the edge.
+**Both blocks sit in the page shell** — inset ~3.3% from each viewport edge and capped at
+1760px. The section mosaic fills that shell; homepage groups are deliberately narrower,
+leaving open space around their smaller images. The mirrored group aligns to the right.
 
 ```css
 --edge: clamp(22px, 3.3vw, 64px);        /* viewport inset */
@@ -340,23 +366,12 @@ edge. Near-full-width, but never flush to the edge.
 
 ## Deliberate deviations from spec v2.0
 
-Three numbers are derived rather than fixed, each because the fixed value broke the thing the
-spec was asking for. They are the only places the build departs from a stated figure.
+The neural map replaces the original tower scene. Camera distance is derived from its
+actual extent and the available viewport, with full spherical orbit and a proportional
+zoom range. Date controls radial placement; weight controls star size. The original city
+remains part of the separate, scroll-driven homepage background.
 
-1. **Opening camera distance** (§8.2 fixes the orbit clamp at `[16, 66]` but not the opening
-   radius; the prototype used 40). A 14-tower cluster at radius 40 is cropped — you cannot
-   see the skyline. The chamber now derives the opening radius from the cluster that actually
-   exists, so the tallest beacon sits inside the frustum. It stays inside the specified clamp.
-
-2. **Resting camera target** (§8.3 gives `(0, 7, 0)`). With a 30-unit tower, y=7 puts the peak
-   outside the frustum at any radius inside the clamp. The resting target now lifts toward the
-   middle of the skyline, never below the spec's 7.
-
-3. **Orbit far clamp** (§8.2 caps the radius at 66). A cluster spread wide enough that its
-   towers do not visually collide has to be framed from further out than that. Raised to 100;
-   the clamp only ever bounded how far a visitor may zoom.
-
-4. **Popup viewport clamp** (§8.3 gives `x ∈ [220, w−220]`, `y ∈ [300, h−40]`). Those assume a
+**Popup viewport clamp** (§8.3 gives `x ∈ [220, w−220]`, `y ∈ [300, h−40]`). Those assume a
    ~400×300 card; a long record grows taller and the fixed floor pushed its top off-screen. The
    clamp is now driven by the card's measured box plus navbar clearance, which is what the
    fixed numbers were approximating.
@@ -367,11 +382,6 @@ reference the spec cites, that is the Sacred Craft pattern, not Still Gardens �
 is an inset lead-plus-stack of separate cards with gaps and a radius. The homepage now follows
 the reference. The mosaic keeps the connected-block rule, but sits in the page shell rather
 than running edge to edge, which is also how Sacred Craft sits on the page.
-
-Also: tower height and footprint were retuned away from the spec's `(7 + weight × 4.6)` and
-`3.4 + rnd × 2.0` — those produce narrow spires that merge into one mass at the spec's ring
-density. `npm run test:unit` now asserts no two towers overlap on the floor plan, since
-spacing and footprint are set independently and it is easy to widen one without the other.
 
 Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
 (the mosaic renders every section), and particle points carry the shared radial texture —

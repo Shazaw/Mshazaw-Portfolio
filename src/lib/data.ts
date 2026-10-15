@@ -121,6 +121,7 @@ const fromProject = (doc: Project): SurveyItem => {
     periodLabel: null,
     // The month is optional; without one the record just reads as a year.
     dateLabel: monthYear(doc.date) ?? String(doc.year),
+    date: doc.date,
     year: doc.year,
     weight: doc.weight,
     tags,
@@ -150,6 +151,7 @@ const fromExperience = (doc: Experience): SurveyItem => {
     cornerLabel: cornerLabel(tags, subtag, doc.employmentType ?? 'ROLE'),
     periodLabel: periodLabel(doc.startDate, doc.endDate, doc.current),
     dateLabel: String(doc.year ?? ''),
+    date: doc.startDate,
     year: doc.year ?? new Date(doc.startDate).getUTCFullYear(),
     weight: doc.weight,
     tags,
@@ -157,7 +159,7 @@ const fromExperience = (doc: Experience): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
-    image: null,
+    image: toImage(doc.logo, doc.organization),
     role: null,
     repoUrl: null,
     liveUrl: null,
@@ -182,6 +184,7 @@ const fromOrganization = (doc: Organization): SurveyItem => {
     cornerLabel: cornerLabel(tags, subtag, doc.role),
     periodLabel: periodLabel(doc.startDate, doc.endDate, doc.current),
     dateLabel: String(doc.year ?? ''),
+    date: doc.startDate,
     year: doc.year ?? new Date(doc.startDate).getUTCFullYear(),
     weight: doc.weight,
     tags,
@@ -189,7 +192,7 @@ const fromOrganization = (doc: Organization): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
-    image: null,
+    image: toImage(doc.logo, doc.title),
     role: null,
     repoUrl: null,
     liveUrl: null,
@@ -214,6 +217,7 @@ const fromAward = (doc: Award): SurveyItem => {
     cornerLabel: cornerLabel(tags, subtag, doc.scope ?? 'AWARD'),
     periodLabel: upper(doc.issuer),
     dateLabel: String(doc.year ?? ''),
+    date: doc.date,
     year: doc.year ?? new Date(doc.date).getUTCFullYear(),
     weight: doc.weight,
     tags,
@@ -221,7 +225,7 @@ const fromAward = (doc: Award): SurveyItem => {
     featured: Boolean(doc.featured),
     featuredOrder: doc.featuredOrder ?? null,
     artwork: `auto:${doc.slug ?? doc.title}`,
-    image: null,
+    image: toImage(doc.media, doc.title),
     role: null,
     repoUrl: null,
     liveUrl: null,
@@ -233,8 +237,8 @@ const fromAward = (doc: Award): SurveyItem => {
 /* ------------------------------------------------------------ queries ---- */
 
 /**
- * Ordering is the same everywhere: weight descending, recency as tiebreak.
- * The chamber depends on it — index 0 is the tallest tower and sits at centre.
+ * Cards and the record panel use weight descending, recency as tiebreak.
+ * The neural map derives chronological positions without changing these indices.
  */
 const ORDER_SORT = ['-weight', '-year'] as const
 
@@ -247,7 +251,7 @@ export const getSectionItems = cache(async (key: SectionKey): Promise<SurveyItem
     where: { published: { equals: true } },
     sort: [...ORDER_SORT],
     limit: 200,
-    // depth 1 populates the screenshot upload; nothing deeper is needed.
+    // depth 1 populates the card image upload; nothing deeper is needed.
     depth: 1,
     pagination: false,
   })
@@ -288,7 +292,8 @@ export const toChamberNodes = (items: SurveyItem[]): ChamberNode[] =>
     label: item.title,
     sublabel: item.kicker,
     weight: item.weight,
-    year: item.year,
+    year: item.date && !Number.isNaN(Date.parse(item.date)) ? new Date(item.date).getUTCFullYear() : item.year,
+    date: item.date,
   }))
 
 export const getSectionUpdatedAt = cache(async (key: SectionKey): Promise<string | null> => {

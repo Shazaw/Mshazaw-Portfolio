@@ -2,10 +2,10 @@ import { bullets, doc, heading, paragraph, prose } from './richtext'
 
 /**
  * Real projects, taken from github.com/Shazaw plus the two engagements that
- * have no repository. `screenshot` names a file in /seed-assets, captured from
- * the running project (or downloaded from the repo where the author already
- * published one); the seed uploads it into Payload media. It is optional — a
- * project without one falls back to generated wireframe artwork.
+ * have no repository. `screenshot` names a card image in /seed-assets: a running
+ * project, repository view or presentation. The seed uploads it into Payload
+ * media. It is optional — a project without one falls back to generated
+ * wireframe artwork.
  */
 export const projects = [
   {
@@ -223,6 +223,7 @@ export const projects = [
     mosaicSpan: 'auto',
     stripArtwork: 'vault',
     repoUrl: 'https://github.com/Shazaw/CrediWise',
+    screenshot: 'crediwise-garuda-hacks.png',
     description: doc(
       paragraph(
         'CrediWise turns verified financial records into an explainable view of financial behaviour, repayment capacity, shock resilience and safe borrowing capacity, for users whose income is informal, seasonal or simply invisible to a conventional score.',
@@ -256,6 +257,7 @@ export const projects = [
     mosaicSpan: 'auto',
     stripArtwork: 'bridge',
     repoUrl: 'https://github.com/Shazaw/Acme-Market-Vulnerable-Lab',
+    screenshot: 'acme-market-repository.png',
     description: prose(
       'A production-shaped environment students can enumerate, exploit within scope and reset between sessions: HTTP, HTTPS, DNS, FTP, SMTP, SSH and MySQL, plus a Laravel storefront.',
       'Coverage runs from DNS zone transfer and anonymous FTP through avatar-upload RCE, stored XSS, IDOR and a legacy SQL injection login, ending in privilege escalation via a writable cron target and an unsafe SUID binary.',
@@ -276,6 +278,7 @@ export const projects = [
     mosaicSpan: 'auto',
     stripArtwork: 'lattice',
     repoUrl: 'https://github.com/Shazaw/Penetration-Testing-Vulnerable-Labs',
+    screenshot: 'penetration-testing-labs.png',
     description: prose(
       'A structured ladder of vulnerable-by-design applications, inspired by DVWA but graded so a learner has somewhere to go next: a legacy box built around outdated software and service misconfiguration, then easy, medium and hard paths through progressively more modern stacks.',
       'Written for workshops at OmahTI Academy, where the labs had to survive a room full of people attacking them at once.',
@@ -315,6 +318,7 @@ export const projects = [
     mosaicSpan: 'auto',
     stripArtwork: 'vault',
     repoUrl: 'https://github.com/Shazaw/E2EE-Proto',
+    screenshot: 'sanct-security.png',
     description: prose(
       'A small Rust prototype for an end-to-end encrypted messaging layer: the session handshake and ratcheting state written from the protocol description rather than pulled from a library, because that is the only way to find out which parts you did not actually understand.',
     ),
@@ -333,6 +337,7 @@ export const projects = [
     mosaicSpan: 'auto',
     stripArtwork: 'radar',
     repoUrl: 'https://github.com/Shazaw/OmahTIAcademy_Hands_On_Practice_Cysec',
+    screenshot: 'omahti-academy.png',
     description: prose(
       'Practice material for the security track at OmahTI Academy: file carving, hex-editor work, metadata extraction and LSB steganography, each built around an artefact students take apart themselves rather than a walkthrough they follow.',
     ),

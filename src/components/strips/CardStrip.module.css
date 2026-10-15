@@ -12,8 +12,9 @@
 
 .gardens {
   display: grid;
-  gap: 24px;
-  margin-top: 44px;
+  width: min(100%, 1120px);
+  gap: clamp(36px, 4vw, 72px);
+  margin-top: 60px;
   perspective: 1400px;
   /*
    * Cards size themselves. Stretching the lead to match the stack made it
@@ -31,12 +32,13 @@
 
 /* lead-left — the Kage proportion: a wide lead beside a narrow stack. */
 .gardens[data-layout='lead-left'][data-count='3'] {
-  grid-template-columns: 2.05fr 1fr;
+  grid-template-columns: 1.35fr 1fr;
 }
 
 /* lead-right — the same, mirrored, so the eye enters from the other side. */
 .gardens[data-layout='lead-right'][data-count='3'] {
-  grid-template-columns: 1fr 2.05fr;
+  grid-template-columns: 1fr 1.35fr;
+  margin-left: auto;
 }
 
 .gardens[data-layout='lead-right'] .lead {
@@ -55,6 +57,11 @@
 /* lead-top — a wide lead across the top, the pair side by side beneath it. */
 .gardens[data-layout='lead-top'] {
   grid-template-columns: 1fr;
+  max-width: 980px;
+}
+
+.gardens[data-layout='lead-top'] .lead {
+  width: min(100%, 620px);
 }
 
 .gardens[data-layout='lead-top'] .side {
@@ -63,8 +70,7 @@
 }
 
 .gardens[data-layout='lead-top'] .lead .media {
-  /* Wider than the standard lead, since it now spans the whole column. */
-  aspect-ratio: 21 / 9;
+  aspect-ratio: 16 / 9;
 }
 
 .gardens[data-count='2'] {
@@ -83,7 +89,7 @@
 .side {
   display: grid;
   grid-template-rows: 1fr 1fr;
-  gap: 24px;
+  gap: 52px;
   min-width: 0;
   perspective: 1400px;
 }
@@ -119,15 +125,13 @@
 }
 
 .lead .media {
-  /* Close to the reference's lead proportion, and a kind crop for a
-     1440x900 or 16:9 screenshot. */
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
   flex: none;
 }
 
 .sideCard .media,
 .gardens[data-layout='even'] .media {
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 16 / 10;
 }
 
 /* With no lead, all three titles sit at the same size. */
@@ -247,7 +251,7 @@
 }
 
 .lead .title {
-  font-size: 30px;
+  font-size: 26px;
 }
 
 /*
@@ -395,6 +399,10 @@
   .gardens[data-count='2'] {
     grid-template-columns: 1fr;
     perspective: none;
+    max-width: 560px;
+    width: 100%;
+    margin-left: 0;
+    gap: 44px;
   }
 
   .side,
@@ -410,12 +418,12 @@
   }
 
   .gardens[data-layout='lead-top'] .lead .media {
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 10;
   }
 
   .lead .media {
     min-height: 0;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 16 / 10;
   }
 
   .lead .title {

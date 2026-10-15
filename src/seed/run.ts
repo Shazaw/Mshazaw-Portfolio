@@ -1,12 +1,11 @@
 import 'dotenv/config'
-import path from 'path'
-import { existsSync } from 'fs'
-import { fileURLToPath } from 'url'
 import { getPayload, type Payload } from 'payload'
 import config from '../payload.config'
 import { projects } from './projects'
 import { awards, experiences, organizations, profileSeed } from './records'
 import { challenges, competitions } from './ctf'
+import { uploadImage } from './media'
+import { seedBlog } from './blog'
 
 /**
  * Idempotent seed. Documents are matched by slug: existing ones are updated in
@@ -17,52 +16,6 @@ import { challenges, competitions } from './ctf'
  */
 
 const FRESH = process.argv.includes('--fresh')
-
-const dirname = path.dirname(fileURLToPath(import.meta.url))
-const ASSET_DIR = path.resolve(dirname, '../../seed-assets')
-
-/**
- * Uploads a screenshot from /seed-assets into the media collection, matched by
- * filename so re-running the seed reuses the existing document rather than
- * piling up duplicates. Returns null when the file is absent — screenshots are
- * optional and the UI falls back to generated artwork.
- */
-const uploadScreenshot = async (
-  payload: Payload,
-  filename: string,
-  alt: string,
-): Promise<string | number | null> => {
-  const filePath = path.join(ASSET_DIR, filename)
-  if (!existsSync(filePath)) {
-    console.warn(`  ! missing asset ${filename}, project will fall back to artwork`)
-    return null
-  }
-
-  const existing = await payload.find({
-    collection: 'media',
-    where: { filename: { equals: filename } },
-    limit: 1,
-    depth: 0,
-  })
-
-  if (existing.docs[0]) {
-    const updated = await payload.update({
-      collection: 'media',
-      id: existing.docs[0].id,
-      data: { alt },
-      depth: 0,
-    })
-    return updated.id
-  }
-
-  const created = await payload.create({
-    collection: 'media',
-    data: { alt },
-    filePath,
-    depth: 0,
-  })
-  return created.id
-}
 
 type AnyCollection =
   | 'projects'
@@ -176,7 +129,7 @@ const run = async () => {
   for (const project of projects) {
     const { slug, screenshot, ...rest } = project as typeof project & { screenshot?: string }
     const mediaId = screenshot
-      ? await uploadScreenshot(payload, screenshot, `${project.title} screenshot`)
+      ? await uploadImage(payload, screenshot, `${project.title} screenshot`)
       : null
     if (mediaId) withShots += 1
     await upsert(payload, 'projects', slug, {
@@ -189,9 +142,13 @@ const run = async () => {
 
   console.log('· experiences')
   for (const experience of experiences) {
-    const { slug, highlights, ...rest } = experience
+    const { slug, highlights, logo, ...rest } = experience as typeof experience & { logo?: string }
+    const mediaId = logo
+      ? await uploadImage(payload, logo, `${experience.organization} · ${experience.title}`)
+      : null
     await upsert(payload, 'experiences', slug, {
       ...rest,
+      ...(logo ? { logo: mediaId } : {}),
       highlights: highlights.map((text) => ({ text })),
       published: true,
     })
@@ -200,9 +157,13 @@ const run = async () => {
 
   console.log('· organizations')
   for (const organization of organizations) {
-    const { slug, highlights, ...rest } = organization
+    const { slug, highlights, logo, ...rest } = organization as typeof organization & { logo?: string }
+    const mediaId = logo
+      ? await uploadImage(payload, logo, `${organization.title} card image`)
+      : null
     await upsert(payload, 'organizations', slug, {
       ...rest,
+      ...(logo ? { logo: mediaId } : {}),
       highlights: highlights.map((text) => ({ text })),
       published: true,
     })
@@ -211,10 +172,20 @@ const run = async () => {
 
   console.log('· awards')
   for (const award of awards) {
-    const { slug, ...rest } = award
-    await upsert(payload, 'awards', slug, { ...rest, published: true })
+    const { slug, media, ...rest } = award as typeof award & { media?: string }
+    const mediaId = media
+      ? await uploadImage(payload, media, `${award.title} card image`)
+      : null
+    await upsert(payload, 'awards', slug, {
+      ...rest,
+      ...(media ? { media: mediaId } : {}),
+      published: true,
+    })
   }
   console.log(`  ${awards.length} awards`)
+
+  console.log('· blog posts')
+  await seedBlog(payload)
 
   console.log('· ctf competitions')
   // SQLite hands out numeric ids; relationships must receive them unchanged.

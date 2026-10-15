@@ -10,6 +10,7 @@ export const experiences = [
   {
     title: 'Lead Security Engineer',
     slug: 'lead-security-engineer-sanct-social',
+    logo: 'sanct-security.png',
     organization: 'Sanct Social',
     location: 'Remote',
     startDate: '2025-09-01',
@@ -39,6 +40,7 @@ export const experiences = [
   {
     title: 'Project Analyst',
     slug: 'project-analyst-180dc-ugm',
+    logo: 'bhob-final-deliverable.png',
     organization: '180 Degrees Consulting UGM',
     location: 'Yogyakarta, ID',
     startDate: '2026-02-01',
@@ -68,6 +70,7 @@ export const experiences = [
   {
     title: 'Security Engineer, Research & Development',
     slug: 'security-engineer-bem-km-ugm',
+    logo: 'bemkm-ugm.png',
     organization: 'BEM KM UGM',
     location: 'Yogyakarta, ID',
     startDate: '2025-09-01',
@@ -96,6 +99,7 @@ export const experiences = [
   {
     title: 'Teaching Assistant, Penetration Testing',
     slug: 'teaching-assistant-omahti-academy-2026',
+    logo: 'aeroroute.png',
     organization: 'OmahTI Academy',
     location: 'Yogyakarta, ID',
     startDate: '2026-03-01',
@@ -123,6 +127,7 @@ export const experiences = [
   {
     title: 'Teaching Assistant & Mentor, Cybersecurity',
     slug: 'teaching-assistant-omahti-academy-2025',
+    logo: 'penetration-testing-labs.png',
     organization: 'OmahTI Academy',
     location: 'Yogyakarta, ID',
     startDate: '2025-03-01',
@@ -150,6 +155,7 @@ export const experiences = [
   {
     title: 'Problem Setter & Person in Charge',
     slug: 'problem-setter-joints-inspire-ctf',
+    logo: 'joints-ctf-2026.png',
     organization: 'JOINTS × Inspire',
     location: 'Yogyakarta, ID',
     startDate: '2026-03-01',
@@ -180,6 +186,7 @@ export const organizations = [
   {
     title: 'OmahTI UGM',
     slug: 'omahti-ugm',
+    logo: 'omahti.png',
     role: 'Head of Cybersecurity Division',
     startDate: '2024-12-01',
     endDate: null,
@@ -206,6 +213,7 @@ export const organizations = [
   {
     title: 'KOMATIK UGM',
     slug: 'komatik-ugm',
+    logo: 'komatik-ugm.png',
     role: 'Head of Cybersecurity Division (ASGama)',
     startDate: '2024-11-01',
     endDate: null,
@@ -231,6 +239,7 @@ export const organizations = [
   {
     title: '180 Degrees Consulting UGM',
     slug: '180dc-ugm',
+    logo: '180dc-ugm.png',
     role: 'IT Manager',
     startDate: '2026-02-01',
     endDate: null,
@@ -257,6 +266,7 @@ export const organizations = [
   {
     title: 'BEM KM UGM',
     slug: 'bem-km-ugm',
+    logo: 'bemkm-ugm.png',
     role: 'Security Engineer, Research & Development',
     startDate: '2025-09-01',
     endDate: '2026-02-01',
@@ -277,6 +287,7 @@ export const organizations = [
   {
     title: 'AIESEC in UGM',
     slug: 'aiesec-in-ugm',
+    logo: 'aiesec-ugm.png',
     role: 'OC Vice President, Program & Partnership',
     startDate: '2024-10-01',
     endDate: '2026-02-01',
@@ -303,6 +314,7 @@ export const organizations = [
   {
     title: 'UGM MUN Community',
     slug: 'ugm-mun-community',
+    logo: 'ugm-mun.png',
     role: 'Member',
     startDate: '2025-09-01',
     endDate: '2026-02-01',
@@ -323,6 +335,7 @@ export const awards = [
   {
     title: 'PsychCTF 2026',
     slug: 'psychctf-2026-first-place',
+    media: 'psychctf-2026.png',
     issuer: 'SAIC, IIT Mandi',
     placement: '1ST PLACE',
     date: '2026-03-01',
@@ -340,6 +353,7 @@ export const awards = [
   {
     title: 'ApoorvCTF 2026',
     slug: 'apoorvctf-2026-second-place',
+    media: 'apoorvctf-2026.png',
     issuer: 'ApoorvCTF, IIIT Kottayam',
     placement: '2ND PLACE',
     date: '2026-03-01',
@@ -357,6 +371,7 @@ export const awards = [
   {
     title: 'Garuda Hacks 7.0',
     slug: 'garuda-hacks-7-top-15',
+    media: 'crediwise-garuda-hacks.png',
     issuer: 'UMN Garuda Hacks',
     placement: 'TOP 15%',
     date: '2026-07-01',
@@ -390,6 +405,7 @@ export const awards = [
   {
     title: 'DCSE Summer Course',
     slug: 'dcse-summer-course-honorable-mention',
+    media: 'dcse-honorable-mention.png',
     issuer: 'Universitas Gadjah Mada',
     placement: 'HONORABLE MENTION',
     date: '2025-08-01',
@@ -446,20 +462,25 @@ export const profileSeed = {
   tagline:
     'Computer science undergraduate at UGM, cybersecurity concentration. CTF player, encryption engineer, and occasional consultant.',
   role: 'CS undergraduate · cybersecurity',
-  aboutIntro:
-    'I build things that have to hold up when someone is actively trying to break them: encryption layers, red-team tooling, and the occasional consulting engagement where the real problem turns out to be the infrastructure nobody documented.',
+  aboutIntro: '',
   email: 'ahsan.wiryawan@gmail.com',
   location: 'Yogyakarta, ID',
   coordinates: "07°46′S 110°22′E · UGM",
   about: doc(
     paragraph(
-      'Computer science undergraduate at Universitas Gadjah Mada, concentrating in cybersecurity. Most of my time goes to three things: applied cryptography, capture-the-flag on both sides of the board, and consulting engagements where the deliverable is a decision rather than a codebase.',
+      'Computer science undergraduate at Universitas Gadjah Mada, concentrating in cybersecurity.',
     ),
+    paragraph('Currently focusing on:'),
+    bullets([
+      'Applied cryptographic encryptions in real applications',
+      'Capture the flag competitions as both player and problem setter',
+      'Consulting projects and workflow',
+    ]),
     paragraph(
       'Right now that means leading the security engineering at Sanct Social, covering the end-to-end encryption layer and the credential scheme behind its group privacy, while heading the cybersecurity divisions at OmahTI and KOMATIK and designing the penetration-testing curriculum that OmahTI Academy teaches from.',
     ),
     paragraph(
-      'The through-line is the same everywhere. A system is only as good as its worst assumption, and most of the work is finding out which assumption that is before somebody else does.',
+      'Passionate about building impactful solutions, driving team execution, and bridging the gap between technical teams and organizational goals.',
     ),
   ),
   focusAreas: [

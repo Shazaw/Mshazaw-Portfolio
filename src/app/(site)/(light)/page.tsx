@@ -9,6 +9,8 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 import { getFeaturedItems, getProfile, getSectionItems } from '@/lib/data'
 import { SECTIONS } from '@/lib/sections'
 import type { SectionKey } from '@/lib/types'
+import { getBlogPosts } from '@/lib/blog-data'
+import { PostCards } from '@/components/blog/PostCards'
 
 /** Chapters 02, 03, 04 and 06 each present their top items as a card strip. */
 const STRIP_SECTIONS: SectionKey[] = ['projects', 'experience', 'organizations', 'awards']
@@ -31,7 +33,7 @@ const heroLine = (line: string, accent: string | null | undefined, strokeClass: 
 }
 
 const Home = async () => {
-  const profile = await getProfile()
+  const [profile, posts] = await Promise.all([getProfile(), getBlogPosts(2)])
 
   const strips = await Promise.all(
     STRIP_SECTIONS.map(async (key) => ({
@@ -65,7 +67,7 @@ const Home = async () => {
           motifSeed={section.key}
         />
         <Reveal>
-          <EnterButton href={section.route} label={`Enter ${section.label} grid`} />
+          <EnterButton href={section.route} label={`Explore ${section.label} map`} />
         </Reveal>
       </Chapter>
     )
@@ -143,7 +145,14 @@ const Home = async () => {
 
         {stripChapter('awards')}
 
-        {/* 06 TOOLKIT, the last thing before the footer. */}
+        {posts.length ? (
+          <Chapter id="blog" eyebrow="07 · Blog · Setter’s notes" heading="Behind the challenge" blurb="The code, the broken assumptions, and the exploit chains behind the challenges I build.">
+            <PostCards posts={posts} headingLevel={3} preview />
+            <EnterButton href="/blog" label="Read the blog" />
+          </Chapter>
+        ) : null}
+
+        {/* 06 TOOLKIT */}
         {skills.length > 0 ? (
           <Chapter id="toolkit" eyebrow="06 · Toolkit · What it is built with">
             <Reveal>

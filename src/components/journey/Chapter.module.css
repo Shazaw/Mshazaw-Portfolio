@@ -13,7 +13,7 @@
   justify-content: center;
   width: var(--shell);
   margin: 0 auto;
-  padding: 120px 0;
+  padding: 140px 0;
 }
 
 .hero {
@@ -131,6 +131,8 @@
 }
 
 @media (max-width: 720px) {
+  .chapter { padding: 90px 0; }
+
   .statrow {
     gap: 36px;
   }
@@ -169,6 +171,7 @@
 }
 
 .aboutProse :global(ul) {
+  list-style: disc;
   margin: 0 0 16px;
   padding-left: 20px;
 }

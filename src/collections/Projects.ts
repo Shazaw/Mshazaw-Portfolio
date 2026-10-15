@@ -19,7 +19,7 @@ export const Projects: CollectionConfig = {
     useAsTitle: 'title',
     group: 'Survey',
     defaultColumns: ['title', 'year', 'weight', 'featured', 'published'],
-    description: 'Builds and research. Weight decides tower height in the chamber.',
+    description: 'Builds and research. Dates place records in the neural map; weight controls star size.',
   },
   access: {
     read: () => true,
@@ -113,9 +113,10 @@ export const Projects: CollectionConfig = {
       name: 'screenshot',
       type: 'upload',
       relationTo: 'media',
+      label: 'Card image',
       admin: {
         description:
-          'Optional. A real screenshot of the running project, shown on the homepage card and in the expanded mosaic cell. Without one, the generated wireframe artwork is used instead.',
+          'Optional screenshot, repository view or presentation, shown on the homepage card and in the expanded record. Without one, generated wireframe artwork is used.',
       },
     },
     {

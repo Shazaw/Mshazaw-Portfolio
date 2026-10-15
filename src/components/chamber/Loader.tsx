@@ -1,7 +1,7 @@
 import styles from './Loader.module.css'
 
 /** The static form of this cube is the monogram and the favicon. */
-export const ChamberLoader = ({ hidden, caption = 'Constructing grid…' }: { hidden: boolean; caption?: string }) => (
+export const ChamberLoader = ({ hidden, caption = 'Connecting the neural map…' }: { hidden: boolean; caption?: string }) => (
   <div
     className={[styles.loader, hidden ? styles.hidden : ''].filter(Boolean).join(' ')}
     aria-hidden={hidden}

@@ -43,8 +43,8 @@ const run = async () => {
     await page.goto(`${BASE}/projects`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(3500)
 
-    check('boots into GRID with a canvas', (await page.locator('canvas').count()) === 1)
-    check('hint is visible in GRID', await page.locator('text=Drag to orbit').isVisible())
+    check('boots into the neural map', (await page.locator('canvas[data-scene="neural-map"]').count()) === 1)
+    check('orbit hint is visible', await page.locator('text=Drag to orbit').isVisible())
 
     await page.click('button:has-text("Cards")')
     await page.waitForTimeout(700)
@@ -55,7 +55,7 @@ const run = async () => {
     })
     check('canvas blurs behind CARDS', blurred.includes('blur'), blurred)
 
-    // A click on a mosaic cell must not also land on the tower behind it.
+    // A click on a mosaic cell must not also land on a node behind it.
     const canvasInert = await page.evaluate(
       () => getComputedStyle(document.querySelector('canvas')).pointerEvents === 'none',
     )
@@ -73,12 +73,12 @@ const run = async () => {
     )
 
     /* --------------------------------------------- toggle round trip ---- */
-    // The CARDS layer used to cover the mode toggle, so GRID was unreachable.
-    await page.click('button:has-text("Grid")')
+    // The CARDS layer must not cover the mode toggle.
+    await page.click('button:has-text("Neural map")')
     await page.waitForTimeout(900)
     check(
-      'toggle goes back to GRID',
-      (await page.locator('button:has-text("Grid")').getAttribute('aria-pressed')) === 'true',
+      'toggle goes back to the neural map',
+      (await page.locator('button:has-text("Neural map")').getAttribute('aria-pressed')) === 'true',
     )
     const topAtToggle = await page.evaluate(() => {
       const btn = [...document.querySelectorAll('button')].find((b) => /cards/i.test(b.textContent))
@@ -228,7 +228,7 @@ const run = async () => {
         activeRows: document.querySelectorAll('button[data-active="true"]').length,
       }
     })
-    check('selecting a record opens its tower', state.open && state.title === title, JSON.stringify(state))
+    check('selecting a record opens its node', state.open && state.title === title, JSON.stringify(state))
     check('the popup clears the record panel', state.popupLeft > state.panelRight, `${Math.round(state.popupLeft)} vs ${Math.round(state.panelRight)}`)
     check('the chosen row is marked active', state.activeRows === 1, String(state.activeRows))
     await ctx.close()
@@ -294,7 +294,7 @@ const run = async () => {
     check('repeated selections do not compound the zoom', drift <= 2, focus.join(', '))
     check('selection zooms in from the framing distance', focus[0] < framing, `${focus[0]} vs ${framing}`)
 
-    // Moving between towers should pan across at a steady distance.
+    // Moving between nodes should pan across at a steady distance.
     await page.evaluate(() => {
       window.__arc = []
       const canvas = document.querySelector('canvas')
@@ -312,7 +312,7 @@ const run = async () => {
     const arc = await page.evaluate(() => window.__arc)
     const swing = arc.length ? Math.max(...arc, before) - Math.min(...arc, before) : 0
     const end = await radius()
-    check('switching towers holds the zoom', swing <= 3, `${before} then swing ${swing} then ${end}`)
+    check('switching nodes holds the zoom', swing <= 3, `${before} then swing ${swing} then ${end}`)
     check('and stays at the focus distance', Math.abs(end - focus[0]) <= 2, `${end} vs ${focus[0]}`)
 
     // Closing the card is what pulls the camera back out.
@@ -326,7 +326,36 @@ const run = async () => {
     const openBefore = (await popupState(page)).open
     await page.locator('text=Selected work').click()
     await page.waitForTimeout(900)
-    check('clicking the panel does not deselect the tower', openBefore && (await popupState(page)).open)
+    check('clicking the panel does not deselect the node', openBefore && (await popupState(page)).open)
+
+    await page.getByRole('button', { name: 'Reset map view' }).click()
+    await settled()
+    check('reset closes the record and restores framing', !(await popupState(page)).open && Math.abs(await radius() - framing) < 2)
+    await page.getByRole('button', { name: 'Zoom in', exact: true }).click()
+    const zoomed = await settled()
+    check('zoom control moves into the neural map', zoomed < framing - 4)
+    await page.mouse.move(1000, 780)
+    await page.mouse.wheel(0, 200)
+    const zoomedOut = await settled()
+    check('mouse wheel zooms out', zoomedOut > zoomed + 4)
+
+    const coordinates = () => page.locator('[data-node="0"]').evaluate(el => el.style.transform)
+    const startPosition = await coordinates()
+    await page.mouse.move(1000, 780)
+    await page.mouse.down()
+    await page.mouse.move(1240, 600, { steps: 12 })
+    await page.mouse.up()
+    await page.waitForTimeout(1100)
+    check('drag rotates the projected nodes', startPosition !== await coordinates())
+    check('orbiting does not select a record', !(await popupState(page)).open)
+
+    await page.getByRole('button', { name: 'Reset map view' }).click()
+    await settled()
+    const label = page.locator('[data-node]').filter({ visible: true }).first()
+    const labelText = await label.locator('span').textContent()
+    await label.click()
+    await page.waitForTimeout(1000)
+    check('a star label opens its own record', (await popupState(page)).title === labelText)
     await ctx.close()
   }
 
@@ -376,17 +405,16 @@ const run = async () => {
     const cells = await page.locator('a[href^="/projects?focus="]').count()
     check('projects strip renders three cards', cells === 3, String(cells))
 
-    // Three identical drawings side by side is what this guards against.
-    const motifCount = await page.evaluate(
+    // Each card has its own uploaded image or generated wireframe motif.
+    const visualCount = await page.evaluate(
       () =>
         new Set(
-          [...document.querySelectorAll('#experience article svg path')]
-            .filter((p) => p.closest('article'))
-            .map((p) => p.closest('article'))
-            .map((a) => a.querySelector('svg path')?.getAttribute('d')?.slice(0, 30)),
+          [...document.querySelectorAll('#experience article')].map(
+            (a) => a.querySelector('img')?.getAttribute('src') ?? a.querySelector('svg path')?.getAttribute('d')?.slice(0, 30),
+          ),
         ).size,
     )
-    check('strip cards do not repeat a motif', motifCount === 3, String(motifCount))
+    check('strip cards do not repeat a visual', visualCount === 3, String(visualCount))
 
     /*
      * Each section arranges its cards differently, so scrolling the page does
@@ -403,8 +431,10 @@ const run = async () => {
           shape: [...group.querySelectorAll('article')]
             .map((c) => Math.round((c.getBoundingClientRect().width / box.width) * 100))
             .join('/'),
-          motifs: [...group.querySelectorAll('article')]
-            .map((c) => c.querySelector('svg path')?.getAttribute('d')?.slice(0, 24) ?? 'img')
+          visuals: [...group.querySelectorAll('article')]
+            .map(
+              (c) => c.querySelector('img')?.getAttribute('src') ?? c.querySelector('svg path')?.getAttribute('d')?.slice(0, 24),
+            )
             .join('|'),
         }
       }),
@@ -420,9 +450,9 @@ const run = async () => {
       groups.map((g) => `${g.id}:${g.shape}`).join('  '),
     )
     check(
-      'no two sections share a motif set',
-      new Set(groups.map((g) => g.motifs)).size === 4,
-      String(new Set(groups.map((g) => g.motifs)).size),
+      'no two sections share a visual set',
+      new Set(groups.map((g) => g.visuals)).size === 4,
+      String(new Set(groups.map((g) => g.visuals)).size),
     )
 
     // Perspective lives on each grid that holds cards, or the stacked pair
@@ -460,16 +490,12 @@ const run = async () => {
       }
     })
 
-    // Inset from the edges like the reference, but still near-full-width — not
-    // flush to the viewport and not a narrow centred measure.
-    const insetOk = (m) =>
-      m.insetLeft > m.vw * 0.02 && m.insetLeft < m.vw * 0.06 && Math.abs(m.insetLeft - m.insetRight) <= 2
-    check('strip group is inset ~3% from both edges', insetOk(shape), JSON.stringify(shape))
-    check('strip group stays near full width (>88%)', shape.coverage > 0.88, String(shape.coverage))
+    check('homepage cards leave deliberate empty space', shape.coverage < 0.82 && shape.coverage > 0.6, String(shape.coverage))
+    check('card group retains the page inset', shape.insetLeft > shape.vw * 0.02 && shape.insetLeft < shape.vw * 0.06, JSON.stringify(shape))
     check('strip group shares the heading left edge', shape.alignsWithHeading)
     check('lead card is wider than the stacked pair', shape.leadWider)
-    check('lead media keeps a landscape ratio (1.25–1.7)', shape.leadRatio > 1.25 && shape.leadRatio < 1.7, String(shape.leadRatio))
-    check('cards are separated by a real gap', shape.gap >= 16, `${shape.gap}px`)
+    check('lead media keeps a compact landscape ratio', shape.leadRatio > 1.6 && shape.leadRatio < 1.9, String(shape.leadRatio))
+    check('cards have generous breathing room', shape.gap >= 36, `${shape.gap}px`)
     check('cards carry a radius', parseFloat(shape.radius) > 0, shape.radius)
 
     const content = await page.evaluate(() => {
@@ -485,6 +511,24 @@ const run = async () => {
     check('home card carries an outbound link', content.links.some((l) => /github|live/i.test(l)), JSON.stringify(content.links))
     check('home card shows a description', content.summary > 40, String(content.summary))
     check('home card shows the project screenshot', content.hasImage === true)
+
+    const homepageBlog = await page.evaluate(() => {
+      const blog = document.getElementById('blog')
+      const toolkit = document.getElementById('toolkit')
+      const media = document.querySelector('#projects article > div')?.getBoundingClientRect()
+      return {
+        beforeToolkit: Boolean(blog && toolkit && (blog.compareDocumentPosition(toolkit) & Node.DOCUMENT_POSITION_FOLLOWING)),
+        title: blog?.querySelector('h2')?.textContent,
+        copy: blog?.textContent,
+        posts: blog?.querySelectorAll('article').length,
+        imageWidth: media?.width,
+        imageHeight: media?.height,
+      }
+    })
+    check('homepage blog is above Toolkit', homepageBlog.beforeToolkit)
+    check('homepage keeps the requested blog heading', homepageBlog.title === 'Behind the challenge')
+    check('homepage shows both blog posts', homepageBlog.posts === 2)
+    check('homepage lead image is smaller than 640 × 370', homepageBlog.imageWidth < 640 && homepageBlog.imageHeight < 370, JSON.stringify(homepageBlog))
 
     await page.locator('#projects article h3 a').first().click()
     await page.waitForTimeout(4200)

@@ -17,7 +17,7 @@ export const slugField = (source = 'title'): Field => ({
 })
 
 /**
- * Weight drives everything visual: tower height in the chamber, ordering in the
+ * Weight drives star size in the neural map, ordering in the
  * mosaic, and which items surface on the homepage. 5 = flagship.
  */
 export const weightField: Field = {
@@ -29,7 +29,7 @@ export const weightField: Field = {
   max: 5,
   admin: {
     position: 'sidebar',
-    description: '1–5. Drives tower height in the chamber and ordering everywhere.',
+    description: '1–5. Controls star size in the neural map and card ordering.',
   },
 }
 

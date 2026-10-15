@@ -10,7 +10,7 @@ import type { SurveyItem } from '@/lib/types'
 import styles from './CardStrip.module.css'
 
 /**
- * One Still-Gardens card: a real screenshot where the project has one and the
+ * One Still-Gardens card: an uploaded image where the record has one and the
  * generated wireframe motif where it doesn't, with the title laid over the
  * bottom edge and the description, full stack and links below.
  *
@@ -75,8 +75,7 @@ export const StripCell = ({
             alt={item.image.alt}
             width={item.image.width}
             height={item.image.height}
-            sizes={lead ? '(max-width: 860px) 100vw, 62vw' : '(max-width: 860px) 100vw, 30vw'}
-            priority={lead}
+            sizes={lead ? '(max-width: 860px) 100vw, (max-width: 1200px) 55vw, 620px' : '(max-width: 860px) 100vw, (max-width: 1200px) 40vw, 470px'}
           />
         ) : (
           <>

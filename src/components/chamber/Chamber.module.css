@@ -15,7 +15,7 @@
   display: block;
   /* The gradient behind a transparent-cleared canvas is what keeps the
      chamber from feeling empty (§2.1). */
-  background: var(--chamber-gradient);
+  background: radial-gradient(ellipse at 65% 48%, #091829 0%, #050c18 45%, #03070e 100%);
   transition: filter var(--dur-slow) var(--ease);
   touch-action: none;
 }
@@ -23,7 +23,7 @@
 .blurred {
   filter: blur(7px) brightness(0.55);
   /* The scene is backdrop only in CARDS — without this a click on a mosaic cell
-     also lands on the tower behind it. */
+     also lands on the node behind it. */
   pointer-events: none;
 }
 
@@ -107,13 +107,69 @@
   text-transform: uppercase;
   color: var(--holo);
   background: rgba(4, 7, 13, 0.85);
-  border: 1px solid rgba(63, 198, 255, 0.4);
-  border-radius: 4px;
+  border: 0;
+  border-radius: 3px;
   padding: 6px 10px;
   transform: translate(-50%, -140%);
   display: none;
   white-space: nowrap;
 }
+
+.nodeLabels { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.nodeLabel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 174px;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--on-dark);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.35;
+  text-shadow: 0 1px 10px #03070e, 0 0 6px #03070e;
+  cursor: pointer;
+  pointer-events: auto;
+  visibility: hidden;
+}
+.nodeLabel span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nodeLabel small { display: block; margin-top: 3px; color: var(--holo); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; }
+.nodeLabel:focus-visible { outline: 1px solid var(--holo); outline-offset: 5px; }
+.mapControls { right: var(--edge); bottom: 24px; display: flex; gap: 8px; }
+.mapControls button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hairline-dark-strong);
+  border-radius: 5px;
+  background: rgba(4, 7, 13, 0.6);
+  color: var(--on-dark-muted);
+  font-size: 19px;
+  cursor: pointer;
+}
+.mapControls button:hover, .mapControls button:focus-visible { color: var(--holo-bright); border-color: var(--holo); }
+.mapStatus {
+  right: var(--edge);
+  top: calc(var(--nav-h) + 58px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--on-dark-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.mapStatus > span { width: 4px; height: 4px; border-radius: 50%; background: var(--holo); box-shadow: 0 0 8px var(--holo); }
+.mapLegend { margin-top: 44px; max-width: 260px; font-family: var(--font-mono); }
+.legendTitle { color: var(--on-dark-muted); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; }
+.timeScale { display: flex; align-items: center; gap: 14px; margin-top: 18px; color: var(--holo-bright); font-size: 10px; }
+.timeScale i { flex: 1; height: 1px; background: linear-gradient(90deg, var(--on-dark-muted), var(--holo), transparent); }
+.mapLegend p { margin: 10px 0 0; color: var(--on-dark-muted); font-size: 9px; letter-spacing: 0.02em; }
 
 /*
  * The mode toggle floats over a scrolling mosaic, so cells would otherwise
