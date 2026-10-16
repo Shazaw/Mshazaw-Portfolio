@@ -19,7 +19,7 @@ export const Chapter = ({
   className?: string
 }) => (
   <section id={id} className={[styles.chapter, className].filter(Boolean).join(' ')}>
-    <Reveal>
+    <Reveal className={styles.chapterHeader}>
       <Eyebrow>{eyebrow}</Eyebrow>
       {heading ? <h2 className={styles.heading}>{heading}</h2> : null}
       {blurb ? <p className={styles.sub}>{blurb}</p> : null}

@@ -226,7 +226,7 @@ export const SectionView = ({
   /* ------------------------------------------------- grid ⇄ cards ---- */
 
   useEffect(() => {
-    engineRef.current?.setLowFps(mode === 'cards')
+    engineRef.current?.setSuspended(mode === 'cards')
     if (mode === 'cards') engineRef.current?.deselect()
     else setExpandedSlug(null)
   }, [mode])

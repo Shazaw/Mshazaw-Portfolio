@@ -158,9 +158,11 @@ for the white acts and opens up with the city.
 neighbourhood graph. It preserves original record indices so labels, panel buttons and
 raycasting all open the same record. The map renders up to 48 records; cards show the rest.
 
-Soft additive sprites make borderless stars with white cores, cyan halos and diffraction
-rays. Curved filaments carry shader-driven signals, with particle trails following those
-same curves and a brief glow at the receiving node. A distant, faint web gives the map depth.
+Soft additive sprites make borderless stars with white cores, cyan halos and four independently
+sized white diffraction rays. Connections carry three to seven irregular, twisting strands.
+Roughly five to seven bright yellow-white pulses travel at a time in short, fast bursts.
+Their compact glow stays subordinate to the stars. Stars fill a spherical volume with uneven local spacing. Three different
+procedural cloud textures, varied wisps and a distant star field give the map parallax and depth.
 
 The map is pushed into the right of the frame by a frustum offset
 (`camera.setViewOffset`) rather than by moving the scene — the orbit maths stays
@@ -171,7 +173,10 @@ The **record panel** highlights five records and explains the radial chronology.
 a row lights its star; selecting it frames the star and opens its card. Projected labels
 also act as keyboard-accessible record buttons. Popups stay clear of the panel and navbar.
 Drag to orbit in any direction; scroll, pinch or use the zoom buttons to move closer.
-Reset restores the opening view. Background motion pauses while the tab is hidden.
+The opening camera sits closer to the swarm; trackpad and pinch sensitivity are boosted by
+45%. Reset restores the opening view. Card view freezes the scene and cancels its render
+loop; resizing redraws the still backdrop once. Animation resumes when returning to the
+map, without advancing through the paused time. Hidden tabs also stop the loop.
 
 Below 1180px the panel would crowd the map, so it hides, the map recentres, and
 the visually-hidden list takes over again.
@@ -258,7 +263,7 @@ Commit the generated migration — production applies it on container start.
   that editor pins survive at realistic density.
 - **Placement derivation** — a semifinal is not a final; 4th place is not a podium.
 - **Neural map** — chronological 3D distances, non-overlapping star hit areas, graph
-  connectivity, deterministic positions, stable source indices, valid links and the node
+  connectivity, rotation-invariant volume, deterministic positions, stable source indices, valid links and the node
   budget, including empty/single-record maps and missing dates.
 
 `npm run test:e2e` drives a real browser over the built site: mode toggle and its
@@ -276,8 +281,8 @@ Current measurements (transferred, compressed):
 
 | Route | Route JS | 3D chunk | Page total |
 |---|---|---|---|
-| `/` | 178.8 KB | 132.3 KB | 458.7 KB |
-| `/projects` | 176.1 KB | 132.3 KB | 423.8 KB |
+| `/` | 176.1 KB | 132.3 KB | 508.5 KB |
+| `/projects` | 174.3 KB | 132.3 KB | 421.7 KB |
 
 Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
 
@@ -331,16 +336,19 @@ Tokens live in `src/styles/tokens.css`; nothing hard-codes a colour.
 
 ### Two card languages
 
-They are not the same thing, and the difference is deliberate — both follow
-[Kage](https://mengto.github.io/kage/).
+Homepage previews use an editorial grid. Section mosaics retain the connected-block
+treatment inspired by [Kage](https://mengto.github.io/kage/).
 
-**Homepage — "02 Still Gardens".** Separate cards with real gaps and a soft radius. Each
-section arranges its three differently, set by `stripLayout` in the section registry, so
-scrolling the page does not read as the same block four times: a wide lead beside a narrow
-stack, the same mirrored, three equal columns, and a wide lead above a pair. Motifs are
-chosen per section as well as per card, so no two sections land on the same trio. Artwork fills each card with the title laid over its bottom edge
-and the mono meta sitting outside beneath it. Card groups cap at 1120px, with generous
-36–72px gutters and compact landscape media. Hover tilts the media only, so the small type below stays crisp.
+**Homepage — editorial grid.** A centered 1200px column holds three equal-width previews
+with 32px gutters and consistent 3:2 images. Titles sit below images, followed by short
+summaries, quiet text tags and secondary links. Section headings and supporting text align
+to the same keylines. Tablet uses two columns; phones use one. A soft paper backdrop keeps
+the moving homepage scene from competing with the text. Blog previews follow the same
+image-first hierarchy in two columns above Toolkit.
+
+The layout draws on [Carbon's grid and spacing guidance](https://carbondesignsystem.com/guidelines/2x-grid/overview/),
+[NN/g's card guidance](https://www.nngroup.com/articles/cards-component/), and the clear
+feature/product grids on [Linear](https://linear.app/) and [Apple](https://www.apple.com/mac/).
 
 **Sections and CTF — "03 Sacred Craft".** One connected block. Cells share 1px hairlines with
 **zero gaps and zero border-radius**, and hover states are always **inset** — an inset ring
@@ -355,7 +363,7 @@ positioned or the hit area collapses back to that element's box.
 
 **Both blocks sit in the page shell** — inset ~3.3% from each viewport edge and capped at
 1760px. The section mosaic fills that shell; homepage groups are deliberately narrower,
-leaving open space around their smaller images. The mirrored group aligns to the right.
+leaving balanced space around their smaller images. Their headings share the centered column.
 
 ```css
 --edge: clamp(22px, 3.3vw, 64px);        /* viewport inset */
@@ -376,12 +384,9 @@ remains part of the separate, scroll-driven homepage background.
    clamp is now driven by the card's measured box plus navbar clearance, which is what the
    fixed numbers were approximating.
 
-**Card layout (§7).** The spec applies the connected-block rule to the homepage strips as well:
-full viewport width, uniform columns, zero gaps, zero radius. Checked against the Kage
-reference the spec cites, that is the Sacred Craft pattern, not Still Gardens — Still Gardens
-is an inset lead-plus-stack of separate cards with gaps and a radius. The homepage now follows
-the reference. The mosaic keeps the connected-block rule, but sits in the page shell rather
-than running edge to edge, which is also how Sacred Craft sits on the page.
+**Card layout (§7).** The homepage uses an editorial preview grid with space between cards,
+small image radii and typography outside the images. The section mosaic keeps the original
+connected-block pattern within the page shell.
 
 Two additions: `mosaicSpan` exists on all four survey collections rather than `projects` alone
 (the mosaic renders every section), and particle points carry the shared radial texture —

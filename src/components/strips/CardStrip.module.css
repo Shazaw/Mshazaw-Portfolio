@@ -1,448 +1,123 @@
-/*
- * Still-Gardens card group (Kage "02 — Still Gardens").
- *
- * NOT full-bleed and NOT welded: the group is inset inside the page column and
- * its cards are separate objects with gaps and a soft radius. The
- * connected-block rule applies to the mosaic, not here — these are gardens,
- * and gardens have paths between them.
- *
- * Shape: one lead card carrying the flagship item, with the next two stacked
- * beside it in a narrower column.
- */
-
+/* A centered editorial grid: consistent keylines and an 8px spacing rhythm. */
 .gardens {
   display: grid;
-  width: min(100%, 1120px);
-  gap: clamp(36px, 4vw, 72px);
-  margin-top: 60px;
-  perspective: 1400px;
-  /*
-   * Cards size themselves. Stretching the lead to match the stack made it
-   * square once the stack chips and links were added, which crops a wide
-   * screenshot badly.
-   */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 48px 32px;
+  margin: 48px auto 0;
   align-items: start;
 }
 
-/*
- * Four arrangements, one per section, so scrolling the homepage does not read
- * as the same block four times. All of them keep the Still-Gardens character:
- * separate cards, real gaps, a soft radius.
- */
+.gardens[data-count='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gardens[data-count='1'] { grid-template-columns: minmax(0, 1fr); max-width: 560px; }
 
-/* lead-left — the Kage proportion: a wide lead beside a narrow stack. */
-.gardens[data-layout='lead-left'][data-count='3'] {
-  grid-template-columns: 1.35fr 1fr;
-}
-
-/* lead-right — the same, mirrored, so the eye enters from the other side. */
-.gardens[data-layout='lead-right'][data-count='3'] {
-  grid-template-columns: 1fr 1.35fr;
-  margin-left: auto;
-}
-
-.gardens[data-layout='lead-right'] .lead {
-  order: 2;
-}
-
-.gardens[data-layout='lead-right'] .side {
-  order: 1;
-}
-
-/* even — three equal columns, no lead at all. */
-.gardens[data-layout='even'][data-count='3'] {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-/* lead-top — a wide lead across the top, the pair side by side beneath it. */
-.gardens[data-layout='lead-top'] {
-  grid-template-columns: 1fr;
-  max-width: 980px;
-}
-
-.gardens[data-layout='lead-top'] .lead {
-  width: min(100%, 620px);
-}
-
-.gardens[data-layout='lead-top'] .side {
-  grid-template-rows: 1fr;
-  grid-template-columns: 1fr 1fr;
-}
-
-.gardens[data-layout='lead-top'] .lead .media {
-  aspect-ratio: 16 / 9;
-}
-
-.gardens[data-count='2'] {
-  grid-template-columns: 1fr 1fr;
-}
-
-.gardens[data-count='1'] {
-  grid-template-columns: 1fr;
-}
-
-/*
- * The stacked pair needs its own perspective. `perspective` only applies to an
- * element's direct children, so with it declared on `.gardens` alone the lead
- * card tilted and these two, being grandchildren, stayed flat.
- */
-.side {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 52px;
-  min-width: 0;
-  perspective: 1400px;
-}
-
-.gardens[data-count='2'] .side {
-  grid-template-rows: 1fr;
-}
-
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  transform-style: preserve-3d;
-}
-
-/* --------------------------------------------------------------- media ---- */
-
+.card { position: relative; min-width: 0; }
 .media {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  width: 100%;
+  aspect-ratio: 3 / 2;
   overflow: hidden;
-  border-radius: 10px;
-  background: var(--strip-visual-gradient);
   border: 1px solid var(--hairline);
-  transform-style: preserve-3d;
-  transition:
-    transform var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
-  will-change: transform;
+  border-radius: 8px;
+  background: var(--strip-visual-gradient);
+  transition: border-color var(--dur-fast) var(--ease);
 }
 
-.lead .media {
-  aspect-ratio: 16 / 9;
-  flex: none;
-}
-
-.sideCard .media,
-.gardens[data-layout='even'] .media {
-  aspect-ratio: 16 / 10;
-}
-
-/* With no lead, all three titles sit at the same size. */
-.gardens[data-layout='even'] .lead .title {
-  font-size: 22px;
-}
-
-.card:hover .media,
-.card:has(.trigger:focus-visible) .media {
-  border-color: rgba(63, 198, 255, 0.55);
-  box-shadow: var(--shadow-lift), 0 0 0 1px rgba(63, 198, 255, 0.35);
-}
-
-.shot {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  transform: translateZ(20px);
-  transition: transform var(--dur) var(--ease);
-}
-
-.card:hover .shot,
-.card:has(.trigger:focus-visible) .shot {
-  transform: translateZ(30px) scale(1.03);
-}
-
-/* Screenshots are mostly dark UI, so the title needs a dark scrim instead. */
-.hasShot .scrim {
-  background: linear-gradient(to top, rgba(6, 12, 20, 0.92) 8%, rgba(6, 12, 20, 0) 100%);
-}
-
-.hasShot .title {
-  color: #fff;
-}
-
-.hasShot .subtag {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.hasShot .arrow {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: translateZ(28px);
-  transition: transform var(--dur) var(--ease);
-}
-
-.art path {
-  fill: none;
-  stroke: var(--holo);
-  stroke-width: 1.3;
-  opacity: 0.8;
-  vector-effect: non-scaling-stroke;
-}
-
-.artMuted path {
-  stroke: #9fb8c6;
-  opacity: 0.5;
-}
-
-.card:hover .art,
-.card:has(.trigger:focus-visible) .art {
-  transform: translateZ(44px) scale(1.04);
-}
-
-/* Cyan scanline sweeping top→bottom on hover. */
-.scan {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, transparent 0%, rgba(63, 198, 255, 0.1) 50%, transparent 100%);
-  transform: translateY(-100%);
-  transition: transform 0.8s ease;
-}
-
-.card:hover .scan,
-.card:has(.trigger:focus-visible) .scan {
-  transform: translateY(100%);
-}
-
-/* Keeps the overlaid title legible over the wireframe lines beneath it. */
-.scrim {
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 46%;
-  pointer-events: none;
-  background: linear-gradient(to top, rgba(246, 248, 249, 0.94) 12%, rgba(246, 248, 249, 0) 100%);
-}
-
-.overlay {
-  position: absolute;
-  inset: auto 0 0 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 24px 20px;
-  transform: translateZ(34px);
-}
-
-.title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
-  margin: 0;
-  min-width: 0;
-}
-
-.lead .title {
-  font-size: 26px;
-}
-
-/*
- * The link lives inside the heading and stretches over the whole card, so the
- * card is entirely clickable without nesting a heading inside an anchor.
- */
-.trigger {
-  color: inherit;
-  text-decoration: none;
-  outline: none;
-}
-
-.trigger::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-}
-
-.subtag {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--graphite);
-  white-space: nowrap;
-  padding-bottom: 4px;
-}
-
-.arrow {
-  position: absolute;
-  top: 18px;
-  right: 20px;
-  width: 26px;
-  height: 26px;
-  transform: translateZ(34px);
-  color: var(--graphite);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
-}
-
-.card:hover .arrow,
-.card:has(.trigger:focus-visible) .arrow {
-  opacity: 1;
-  color: var(--holo);
-}
-
-/* ------------------------------------------------------------- caption ---- */
+.shot, .art { width: 100%; height: 100%; display: block; }
+.shot { object-fit: cover; object-position: top center; transition: transform var(--dur-slow) var(--ease); }
+.art { padding: 16px; }
+.art path { fill: none; stroke: var(--holo); stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+.art .artMuted { stroke: var(--graphite); opacity: 0.35; }
+.card:hover .shot { transform: scale(1.025); }
+.card:hover .media, .card:focus-within .media { border-color: var(--holo); }
 
 .caption {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
-  margin-top: 14px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--graphite);
-}
-
-.index {
-  color: var(--holo);
-  white-space: nowrap;
-}
-
-.summary {
-  margin: 8px 0 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--graphite);
-}
-
-/* Full stack, in the order the editor wrote it — never truncated here. */
-.stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.chip {
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 24px;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.06em;
+  line-height: 1.6;
+  letter-spacing: 0.055em;
   text-transform: uppercase;
-  border: 1px solid var(--hairline);
-  border-radius: 3px;
-  padding: 3px 7px;
   color: var(--graphite);
-  white-space: nowrap;
 }
+.caption > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.index { flex: none; opacity: 0.65; }
 
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-  position: relative;
-  /* Above the stretched trigger so these are separately clickable. */
-  z-index: 4;
+.title {
+  min-height: 2.5em;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.8vw, 24px);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  margin: 12px 0;
 }
+.trigger { display: flex; justify-content: space-between; gap: 16px; color: var(--ink); text-decoration: none; }
+.trigger::after { content: ''; position: absolute; inset: 0; }
+.trigger > span { flex: none; color: var(--graphite); font-size: 18px; transition: color var(--dur-fast); }
+.card:hover .trigger > span { color: var(--ink); }
+.trigger:focus-visible { outline: 2px solid var(--holo); outline-offset: 5px; }
 
-.linkBtn {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--ink);
-  border: 1px solid var(--hairline);
-  border-radius: 5px;
-  padding: 6px 11px;
-  transition:
-    border-color var(--dur-fast) var(--ease),
-    color var(--dur-fast) var(--ease),
-    background var(--dur-fast) var(--ease);
-}
-
-.linkBtn:hover,
-.linkBtn:focus-visible {
-  border-color: var(--holo);
-  color: var(--ink);
-  background: rgba(63, 198, 255, 0.1);
-}
-
-.sideCard .summary {
+.summary {
+  min-height: 4.95em;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--graphite);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-.lead .summary {
-  max-width: 60ch;
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-height: 36px;
+  padding: 0;
+  margin: 16px 0 0;
+  list-style: none;
+  color: var(--graphite);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.7;
+  letter-spacing: 0.025em;
 }
-
-@media (max-width: 860px) {
-  /* Every arrangement collapses to one column on a phone. */
-  .gardens,
-  .gardens[data-layout],
-  .gardens[data-layout][data-count='3'],
-  .gardens[data-count='2'] {
-    grid-template-columns: 1fr;
-    perspective: none;
-    max-width: 560px;
-    width: 100%;
-    margin-left: 0;
-    gap: 44px;
-  }
-
-  .side,
-  .gardens[data-layout='lead-top'] .side {
-    grid-template-rows: auto auto;
-    grid-template-columns: 1fr;
-    perspective: none;
-  }
-
-  .gardens[data-layout='lead-right'] .lead,
-  .gardens[data-layout='lead-right'] .side {
-    order: 0;
-  }
-
-  .gardens[data-layout='lead-top'] .lead .media {
-    aspect-ratio: 16 / 10;
-  }
-
-  .lead .media {
-    min-height: 0;
-    aspect-ratio: 16 / 10;
-  }
-
-  .lead .title {
-    font-size: 24px;
-  }
+.stack li { white-space: nowrap; }
+.links {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
 }
+.linkBtn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--graphite);
+  text-decoration: none;
+  transition: color var(--dur-fast);
+}
+.linkBtn:hover, .linkBtn:focus-visible { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 
+@media (max-width: 960px) {
+  .gardens { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px 24px; }
+}
+@media (max-width: 640px) {
+  .gardens, .gardens[data-count] { grid-template-columns: minmax(0, 1fr); max-width: 480px; margin-top: 32px; }
+  .title, .summary, .stack { min-height: 0; }
+  .caption { margin-top: 20px; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .media,
-  .card:hover .media {
-    transform: none !important;
-  }
-
-  .art,
-  .card:hover .art {
-    transform: none;
-  }
-
-  .scan {
-    display: none;
-  }
+  .shot { transition: none; }
+  .card:hover .shot { transform: none; }
 }

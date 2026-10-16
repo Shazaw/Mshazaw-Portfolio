@@ -40,11 +40,30 @@ const run = async () => {
     console.log('\nchamber — grid ⇄ cards')
     const ctx = await browser.newContext({ viewport: DESKTOP })
     const page = await ctx.newPage()
+    await page.addInitScript(() => {
+      window.__mapDraws = 0
+      for (const Context of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
+        if (!Context) continue
+        for (const name of ['drawArrays', 'drawElements']) {
+          const draw = Context.prototype[name]
+          Context.prototype[name] = function (...args) {
+            if (this.canvas.dataset?.scene === 'neural-map') window.__mapDraws++
+            return draw.apply(this, args)
+          }
+        }
+      }
+    })
     await page.goto(`${BASE}/projects`, { waitUntil: 'networkidle' })
     await page.waitForTimeout(3500)
 
     check('boots into the neural map', (await page.locator('canvas[data-scene="neural-map"]').count()) === 1)
     check('orbit hint is visible', await page.locator('text=Drag to orbit').isVisible())
+    const network = await page.locator('canvas').evaluate(el => ({
+      nodes: Number(el.dataset.nodes), connections: Number(el.dataset.connections),
+      strands: Number(el.dataset.strands), pulses: Number(el.dataset.pulses),
+    }))
+    check('neural map has a full web of strands', network.strands >= network.connections * 3 && network.connections >= network.nodes * 2.5, JSON.stringify(network))
+    check('only a few electric pulses run at once', network.pulses > 0 && network.pulses <= 8 && network.pulses < network.connections / 3, JSON.stringify(network))
 
     await page.click('button:has-text("Cards")')
     await page.waitForTimeout(700)
@@ -61,6 +80,15 @@ const run = async () => {
     )
     check('canvas stops taking clicks in CARDS', canvasInert === true)
     check('mosaic cells render', (await page.locator('article h3').count()) >= 10)
+
+    const pausedDraws = await page.evaluate(() => window.__mapDraws)
+    await page.waitForTimeout(500)
+    check('CARDS completely stops the WebGL render loop', pausedDraws > 0 && await page.evaluate(() => window.__mapDraws) === pausedDraws)
+    await page.click('button:has-text("Neural map")')
+    await page.waitForFunction(draws => window.__mapDraws > draws, pausedDraws)
+    check('returning to the map resumes rendering', await page.evaluate(() => window.__mapDraws) > pausedDraws)
+    await page.click('button:has-text("Cards")')
+    await page.waitForTimeout(300)
 
     const stored = await page.evaluate(() => localStorage.getItem('holo:mode:projects'))
     check('mode persists to localStorage', stored === 'cards', String(stored))
@@ -338,6 +366,7 @@ const run = async () => {
     await page.mouse.wheel(0, 200)
     const zoomedOut = await settled()
     check('mouse wheel zooms out', zoomedOut > zoomed + 4)
+    check('trackpad zoom has the requested 45% sensitivity boost', Math.abs(zoomedOut / zoomed - Math.exp(0.29)) < 0.04, `${zoomed} → ${zoomedOut}`)
 
     const coordinates = () => page.locator('[data-node="0"]').evaluate(el => el.style.transform)
     const startPosition = await coordinates()
@@ -416,11 +445,7 @@ const run = async () => {
     )
     check('strip cards do not repeat a visual', visualCount === 3, String(visualCount))
 
-    /*
-     * Each section arranges its cards differently, so scrolling the page does
-     * not read as the same block four times over. Layouts are compared by the
-     * widths they actually produce, not just by the attribute.
-     */
+    // Consistent widths, image baselines and type placement form the editorial grid.
     const groups = await page.evaluate(() =>
       ['projects', 'experience', 'organizations', 'awards'].map((id) => {
         const group = document.querySelector(`#${id} [data-layout]`)
@@ -431,6 +456,9 @@ const run = async () => {
           shape: [...group.querySelectorAll('article')]
             .map((c) => Math.round((c.getBoundingClientRect().width / box.width) * 100))
             .join('/'),
+          centered: Math.abs(box.left - (innerWidth - box.right)) <= 2,
+          imageTops: [...group.querySelectorAll('article > div:first-child')].map(el => Math.round(el.getBoundingClientRect().top)),
+          titlesBelowImages: [...group.querySelectorAll('article')].every(card => card.querySelector('h3').getBoundingClientRect().top > card.querySelector('div').getBoundingClientRect().bottom),
           visuals: [...group.querySelectorAll('article')]
             .map(
               (c) => c.querySelector('img')?.getAttribute('src') ?? c.querySelector('svg path')?.getAttribute('d')?.slice(0, 24),
@@ -440,35 +468,22 @@ const run = async () => {
       }),
     )
     check(
-      'every section declares its own layout',
-      new Set(groups.map((g) => g.layout)).size === 4,
+      'every section uses the shared editorial grid',
+      groups.every((g) => g.layout === 'editorial'),
       groups.map((g) => g.layout).join(', '),
     )
     check(
-      'and those layouts produce different shapes',
-      new Set(groups.map((g) => g.shape)).size >= 3,
+      'cards have consistent widths across sections',
+      new Set(groups.map((g) => g.shape)).size === 1,
       groups.map((g) => `${g.id}:${g.shape}`).join('  '),
     )
+    check('all homepage card groups are centered', groups.every(g => g.centered))
+    check('all images share their row baseline', groups.every(g => new Set(g.imageTops).size === 1))
+    check('titles sit below images in every section', groups.every(g => g.titlesBelowImages))
     check(
       'no two sections share a visual set',
       new Set(groups.map((g) => g.visuals)).size === 4,
       String(new Set(groups.map((g) => g.visuals)).size),
-    )
-
-    // Perspective lives on each grid that holds cards, or the stacked pair
-    // stays flat while only the lead tilts.
-    const perspectives = await page.evaluate(() => {
-      const group = document.querySelector('#projects article')?.closest('[data-count]')
-      const side = group?.querySelector('div[class*="side"]')
-      return {
-        group: getComputedStyle(group).perspective,
-        side: side ? getComputedStyle(side).perspective : 'none',
-      }
-    })
-    check(
-      'both the lead and the stacked pair have perspective',
-      perspectives.group !== 'none' && perspectives.side !== 'none',
-      JSON.stringify(perspectives),
     )
 
     const shape = await page.evaluate(() => {
@@ -484,24 +499,24 @@ const run = async () => {
         coverage: groupBox ? +(groupBox.width / window.innerWidth).toFixed(3) : 0,
         alignsWithHeading: groupBox && heading ? Math.abs(groupBox.left - heading.left) <= 1 : false,
         leadRatio: +(media[0].width / media[0].height).toFixed(2),
-        leadWider: media[0].width > media[1].width,
+        equalWidths: Math.abs(media[0].width - media[1].width) < 1,
         gap: Math.round(media[1].left - media[0].right),
         radius: getComputedStyle(cards[0].querySelector('div')).borderTopLeftRadius,
       }
     })
 
-    check('homepage cards leave deliberate empty space', shape.coverage < 0.82 && shape.coverage > 0.6, String(shape.coverage))
-    check('card group retains the page inset', shape.insetLeft > shape.vw * 0.02 && shape.insetLeft < shape.vw * 0.06, JSON.stringify(shape))
+    check('homepage cards balance content and empty space', shape.coverage < 0.87 && shape.coverage > 0.7, String(shape.coverage))
+    check('homepage card group is centered', Math.abs(shape.insetLeft - shape.insetRight) <= 2, JSON.stringify(shape))
     check('strip group shares the heading left edge', shape.alignsWithHeading)
-    check('lead card is wider than the stacked pair', shape.leadWider)
-    check('lead media keeps a compact landscape ratio', shape.leadRatio > 1.6 && shape.leadRatio < 1.9, String(shape.leadRatio))
-    check('cards have generous breathing room', shape.gap >= 36, `${shape.gap}px`)
+    check('preview images have equal widths', shape.equalWidths)
+    check('preview images keep a consistent 3:2 ratio', shape.leadRatio > 1.45 && shape.leadRatio < 1.55, String(shape.leadRatio))
+    check('cards use consistent 32px gutters', shape.gap === 32, `${shape.gap}px`)
     check('cards carry a radius', parseFloat(shape.radius) > 0, shape.radius)
 
     const content = await page.evaluate(() => {
       const card = document.querySelector('#projects article')
       return {
-        chips: card.querySelectorAll('[aria-label="Tech stack"] span').length,
+        chips: card.querySelectorAll('[aria-label="Tech stack"] li').length,
         links: [...card.querySelectorAll('a')].map((a) => a.textContent.trim()),
         summary: (card.querySelector('p')?.textContent ?? '').length,
         hasImage: Boolean(card.querySelector('img')),
@@ -528,7 +543,7 @@ const run = async () => {
     check('homepage blog is above Toolkit', homepageBlog.beforeToolkit)
     check('homepage keeps the requested blog heading', homepageBlog.title === 'Behind the challenge')
     check('homepage shows both blog posts', homepageBlog.posts === 2)
-    check('homepage lead image is smaller than 640 × 370', homepageBlog.imageWidth < 640 && homepageBlog.imageHeight < 370, JSON.stringify(homepageBlog))
+    check('homepage preview images stay below 420 × 280', homepageBlog.imageWidth < 420 && homepageBlog.imageHeight < 280, JSON.stringify(homepageBlog))
 
     await page.locator('#projects article h3 a').first().click()
     await page.waitForTimeout(4200)

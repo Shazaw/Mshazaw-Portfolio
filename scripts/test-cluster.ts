@@ -3,7 +3,7 @@ import { buildNeuralMap, nodeTime } from '../src/lib/neuralMap'
 import { MAX_NODES } from '../src/lib/chamberConstants'
 import type { ChamberNode } from '../src/lib/types'
 
-for (const count of [0, 1, 2, 4, 14, 24, 48, 60]) {
+for (const count of [0, 1, 2, 4, 6, 14, 24, 48, 60]) {
   const records: ChamberNode[] = Array.from({ length: count }, (_, index) => ({
     id: String(index), slug: `record-${index}`, label: `Record ${index}`, sublabel: '',
     weight: 5, year: 2026 - index % 5,
@@ -29,6 +29,17 @@ for (const count of [0, 1, 2, 4, 14, 24, 48, 60]) {
       assert(distance > (node.size + other.size) * 1.2, 'Interactive star hit areas must not overlap in 3D')
     }
   }
+  if (nodes.length >= 6) {
+    // Covariance determinant is rotation-invariant: a disc can have a wide X/Y/Z
+    // bounding box yet still collapse to a line when viewed edge-on.
+    const mean = [0, 1, 2].map(axis => nodes.reduce((sum, node) => sum + node.position[axis], 0) / nodes.length)
+    const covariance = [0, 1, 2].map(a => [0, 1, 2].map(b => nodes.reduce((sum, node) => sum + (node.position[a] - mean[a]) * (node.position[b] - mean[b]), 0) / nodes.length))
+    const [a, b, c] = covariance
+    const determinant = a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0])
+    const volume = determinant / Math.pow((a[0] + b[1] + c[2]) / 3, 3)
+    assert(volume > 0.3, `The swarm must have depth from every angle (volume ${volume.toFixed(3)})`)
+    assert(links.length >= nodes.length * 2.5, 'The fuller network needs multiple pathways around each star')
+  }
   const reached = new Set(nodes.length ? [0] : [])
   for (let step = 0; step < nodes.length; step++) {
     for (const [a, b] of links) {
@@ -38,7 +49,7 @@ for (const count of [0, 1, 2, 4, 14, 24, 48, 60]) {
   }
   assert.equal(reached.size, nodes.length, 'Every node needs a path through the network')
   assert.equal(new Set(links.map(pair => [...pair].sort().join(':'))).size, links.length)
-  assert(links.length <= nodes.length * 4, 'Link budget must scale linearly')
+  assert(links.length <= nodes.length * 6, 'Link budget must scale linearly')
   console.log(`neural map: ${count} records → ${nodes.length} stars, ${links.length} connections ✓`)
 }
 

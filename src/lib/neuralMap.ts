@@ -21,7 +21,8 @@ const distance = (a: Point3, b: Point3) => Math.hypot(a[0] - b[0], a[1] - b[1], 
 
 /**
  * A volumetric constellation: chronological rank controls distance from origin.
- * Seeded candidate directions keep stars apart in 3D and in the opening view.
+ * Seeded directions fill the entire sphere, including its front and back.
+ * Screen-space separation is capped so it cannot flatten the cloud into a disc.
  * Connections form a connected, bounded-degree neighbourhood, not a complete graph.
  */
 export const buildNeuralMap = (records: ChamberNode[]) => {
@@ -33,21 +34,26 @@ export const buildNeuralMap = (records: ChamberNode[]) => {
   ordered.forEach(({ record, index }, rank) => {
     const random = mulberry32(hashSeed(record.slug || record.id))
     const radius = rank === 0 ? 0 : 7 + 4.4 * Math.sqrt(rank)
+    const spacing = 6.5 + random() * 4.5
     let position: Point3 = [0, 0, 0]
     let best = -Infinity
     for (let attempt = 0; attempt < 48 && rank > 0; attempt++) {
       const angle = rank * 2.399963 + attempt * 2.399963 + random() * 0.25
-      const vertical = (random() - 0.5) * 1.5
+      const vertical = random() * 2 - 1
       const horizontal = Math.sqrt(1 - vertical * vertical)
       const candidate: Point3 = [Math.cos(angle) * horizontal * radius, vertical * radius, Math.sin(angle) * horizontal * radius]
       const screen = project(candidate)
-      const score = Math.min(...nodes.map((node) => {
+      const clearance = Math.min(...nodes.map((node) => distance(candidate, node.position)))
+      const screenClearance = Math.min(...nodes.map((node) => {
         const other = project(node.position)
-        return Math.min(distance(candidate, node.position), Math.hypot(screen[0] - other[0], screen[1] - other[1]) * 1.35)
+        return Math.hypot(screen[0] - other[0], screen[1] - other[1])
       }))
+      // Stop rewarding perfect equidistance once a star has breathing room.
+      // Different local clearances leave pockets, loose branches and open space.
+      const score = Math.min(spacing, clearance) + Math.min(6, screenClearance) * 0.18
       if (score > best) { best = score; position = candidate }
     }
-    nodes.push({ index, position, radius, size: 0.85 + Math.max(1, Math.min(5, record.weight)) * 0.13, phase: random() * Math.PI * 2 })
+    nodes.push({ index, position, radius, size: (0.85 + Math.max(1, Math.min(5, record.weight)) * 0.13) * (0.84 + random() * 0.32), phase: random() * Math.PI * 2 })
   })
 
   const pairs = new Set<string>()
@@ -67,7 +73,7 @@ export const buildNeuralMap = (records: ChamberNode[]) => {
       const older = nodes.slice(0, rank).sort((a, b) => distance(node.position, a.position) - distance(node.position, b.position))[0]
       connect(node.index, older.index)
     }
-    nearest.slice(0, 3).forEach((other) => connect(node.index, other.index))
+    nearest.slice(0, 5).forEach((other) => connect(node.index, other.index))
   })
 
   return { nodes: nodes.sort((a, b) => a.index - b.index), links, extent: Math.max(12, ...nodes.map((node) => node.radius + node.size * 2)) }

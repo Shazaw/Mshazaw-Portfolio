@@ -3,7 +3,7 @@ import { HomeScene } from '@/components/journey/HomeScene'
 import { SmoothScroll } from '@/components/journey/SmoothScroll'
 import { Reveal } from '@/components/journey/Reveal'
 import { CardStrip } from '@/components/strips/CardStrip'
-import { EnterButton } from '@/components/ui/EnterButton'
+import Link from 'next/link'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import { getFeaturedItems, getProfile, getSectionItems } from '@/lib/data'
@@ -56,6 +56,7 @@ const Home = async () => {
       <Chapter
         key={key}
         id={key}
+        className={styles.featureChapter}
         eyebrow={`${section.num} · ${section.label} · Selected`}
         heading={section.heading}
         blurb={section.blurb}
@@ -63,11 +64,10 @@ const Home = async () => {
         <CardStrip
           items={items}
           route={section.route}
-          layout={section.stripLayout}
           motifSeed={section.key}
         />
         <Reveal>
-          <EnterButton href={section.route} label={`Explore ${section.label} map`} />
+          <Link href={section.route} className={styles.sectionLink}>Explore {section.label.toLowerCase()} <span aria-hidden="true">↗</span></Link>
         </Reveal>
       </Chapter>
     )
@@ -146,9 +146,9 @@ const Home = async () => {
         {stripChapter('awards')}
 
         {posts.length ? (
-          <Chapter id="blog" eyebrow="07 · Blog · Setter’s notes" heading="Behind the challenge" blurb="The code, the broken assumptions, and the exploit chains behind the challenges I build.">
+          <Chapter id="blog" className={styles.featureChapter} eyebrow="07 · Blog · Setter’s notes" heading="Behind the challenge" blurb="The code, the broken assumptions, and the exploit chains behind the challenges I build.">
             <PostCards posts={posts} headingLevel={3} preview />
-            <EnterButton href="/blog" label="Read the blog" />
+            <Link href="/blog" className={styles.sectionLink}>Read the blog <span aria-hidden="true">↗</span></Link>
           </Chapter>
         ) : null}
 
