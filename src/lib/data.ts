@@ -66,9 +66,8 @@ const artworkFor = (value: unknown, slug: string): string =>
 /**
  * Screenshots are optional; the UI falls back to generated artwork without one.
  *
- * Payload reports uploads at `/api/media/file/<name>`, which is a dynamic route.
- * The same files sit in `public/media`, so the static path is preferred — it is
- * cacheable and `next/image` can optimise it straight off disk.
+ * Use Payload's URL: local files and remotely stored Blob media have different
+ * origins. The filename fallback only handles legacy documents without a URL.
  */
 const toImage = (value: unknown, fallbackAlt: string): SurveyImage | null => {
   if (!value || typeof value !== 'object') return null
@@ -79,7 +78,7 @@ const toImage = (value: unknown, fallbackAlt: string): SurveyImage | null => {
     height?: number | null
     alt?: string | null
   }
-  const url = media.filename ? `/media/${media.filename}` : media.url
+  const url = media.url || (media.filename ? `/media/${media.filename}` : null)
   if (!url) return null
   return {
     url,

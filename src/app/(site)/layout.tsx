@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from 'next'
 import { fontVariables } from '@/lib/fonts'
 import { getProfile } from '@/lib/data'
+import { siteURL } from '@/lib/site-url'
 import '@/styles/globals.css'
 
 export const generateMetadata = async (): Promise<Metadata> => {
   const profile = await getProfile()
-  const base = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
   const title = profile.siteTitle || profile.name
   const description =
     profile.siteDescription ||
     `Portfolio of ${profile.name}${profile.role ? `, ${profile.role}` : ''}.`
 
   return {
-    metadataBase: new URL(base),
+    metadataBase: new URL(siteURL),
     title: {
       default: title,
       template: `%s · ${profile.initials || title}`,
@@ -26,7 +26,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
       siteName: title,
       title,
       description,
-      url: base,
+      url: siteURL,
     },
     twitter: {
       card: 'summary_large_image',

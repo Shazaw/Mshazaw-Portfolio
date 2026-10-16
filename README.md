@@ -21,7 +21,7 @@ reference the chamber was ported from.
 | 3D | Vanilla Three.js, named imports, loaded via dynamic `import()` only when a scene will render |
 | Styling | Tailwind v4 for utilities + CSS Modules for the bespoke surfaces; all tokens in `src/styles/tokens.css` |
 | Scroll | Lenis + IntersectionObserver (one scroll system, never two) |
-| Deploy | Docker — Payload needs a persistent Node server |
+| Deploy | Docker with mounted storage, or Vercel with Turso and Vercel Blob |
 
 Every public page is statically generated. Content changes fan out through Payload
 `afterChange` / `afterDelete` hooks calling `revalidatePath`, with an hourly ISR floor as a
@@ -52,7 +52,7 @@ npm run dev                   # http://localhost:3000, admin at /admin
 |---|---|
 | `PAYLOAD_SECRET` | Signs Payload auth tokens. Required. |
 | `DATABASE_URI` | libsql URL, e.g. `file:./data/holo-grid.db`. |
-| `NEXT_PUBLIC_SERVER_URL` | Public origin — canonical URLs, sitemap, OG images. |
+| `NEXT_PUBLIC_SERVER_URL` | Optional public origin override for canonical URLs, sitemap and OG images. |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Only used to create the first admin user. |
 
 ---
@@ -290,7 +290,65 @@ Budgets: route JS ≤ 180 KB, 3D chunk ≤ 200 KB, first visit ≤ 1.2 MB.
 
 ## Deployment
 
-Payload needs a persistent Node server, so this deploys as a long-running container.
+### Vercel (free-tier services)
+
+The Vercel deployment uses a remote Turso database and a **public** Vercel Blob store.
+The SQLite file and `public/media` are local-only and are excluded from Git; the two
+providers must be configured before building the site. Vercel should use the repository
+root, its Next.js preset, `npm ci` and `npm run build`, with the default output directory
+and Node.js 22.x.
+
+Add these variables to the Vercel project (Production); never commit their values:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URI` | Your Turso `libsql://...` URL |
+| `DATABASE_AUTH_TOKEN` | Turso database token |
+| `BLOB_READ_WRITE_TOKEN` | Token for the connected public Vercel Blob store |
+| `PAYLOAD_SECRET` | A long random string, e.g. generated with `openssl rand -hex 32` |
+| `NEXT_PUBLIC_SERVER_URL` | Optional exact HTTPS origin override for a custom domain |
+
+In **Project Settings → Environment Variables**, turn on **Enable access to System
+Environment Variables**. Vercel supplies `VERCEL_PROJECT_PRODUCTION_URL` automatically;
+the app uses it for canonical URLs, the sitemap and OG links. You do not need to find or
+manually create `NEXT_PUBLIC_SERVER_URL`. Set it only if you want to override the default.
+
+The Blob plugin uses local uploads when no Blob token is present, and the database adapter
+uses `data/holo-grid.db` when no database URL is present. On Vercel **both remote services
+are required**. Other `BLOB_*` variables are not used by this app.
+
+For a **new, empty Turso database**, run the checked-in migrations, then populate it with
+the repository seed and image assets **before** the first Vercel build. On your own machine,
+create an ignored `.env.remote.local` containing the four required variables above (optionally add
+`SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` to create the first admin user). Use the same
+Turso and Blob credentials in that file as in Vercel, then run in Bash:
+
+```bash
+set -a; . ./.env.remote.local; set +a
+NODE_ENV=production npm run migrate
+NODE_ENV=production npm run seed
+NODE_ENV=production npm run migrate:status
+```
+
+`npm run seed` uploads the images from `seed-assets/` to Blob and publishes the survey
+records and both blog posts. It also includes the parked CTF placeholder data. If you
+already edited records in the local CMS beyond what is in `src/seed/`, export or copy
+those changes separately: seeding an empty database reproduces the repository content,
+not every edit in the local SQLite file. Don't run the full seed over an established
+production database: it prunes survey records whose slugs aren't in the seed. For future
+schema changes, run `NODE_ENV=production npm run migrate` with the remote env before
+deploying code that depends on the new schema. The Docker entrypoint does not run on
+Vercel; don't run seeding or migrations inside the Vercel build command.
+
+Connect the Vercel Blob store to the project, import its credentials into Production,
+and deploy after bootstrapping. Use a separate database and Blob store for Preview
+deployments if they should allow CMS writes. Confirm `/`, `/blog`, an article, uploaded
+images and `/admin` on the deployed URL. The Hobby plans have limits; check the Turso
+and Vercel dashboards to monitor usage.
+
+### Docker
+
+For a persistent Docker host, the existing compose deployment uses mounted volumes.
 
 ```bash
 export PAYLOAD_SECRET=$(openssl rand -hex 32)

@@ -36,7 +36,7 @@ export const estimateReadingMinutes = (sections: unknown): number => {
 
 export const blogImage = (value: number | Media | null | undefined) => {
   if (!value || typeof value !== 'object') return null
-  const url = value.filename ? `/media/${value.filename}` : value.url
+  const url = value.url || (value.filename ? `/media/${value.filename}` : null)
   if (!url) return null
   return {
     url,
